@@ -184,6 +184,11 @@ export default function DashboardPage() {
     const totalSavings = monthlyData.reduce((sum, month) => sum + month.savings, 0);
     const averageMonthlySavings = totalSavings / monthlyData.length;
 
+    // 12-month totals
+    const total12MonthIncome = monthlyData.reduce((sum, month) => sum + month.income, 0);
+    const total12MonthExpenses = monthlyData.reduce((sum, month) => sum + month.expenses, 0);
+    const total12MonthSavings = total12MonthIncome - total12MonthExpenses;
+
     // Find month with highest expense
     const highestExpenseMonth = monthlyData.reduce((max, month) =>
         month.expenses > max.expenses ? month : max
@@ -365,6 +370,138 @@ export default function DashboardPage() {
                             )}
                         </div>
                     )}
+                </CardContent>
+            </Card>
+
+            {/* 12 Months Summary Cards */}
+            <div className="grid gap-4 md:grid-cols-3">
+                <Card className="overflow-hidden border-2 shadow-lg hover:shadow-xl transition-shadow duration-300">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-linear-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20">
+                        <CardTitle className="text-sm font-medium">12-Month Income</CardTitle>
+                        <TrendingUp className="h-5 w-5 text-green-600" />
+                    </CardHeader>
+                    <CardContent className="pt-4">
+                        <div className="text-2xl sm:text-3xl font-bold text-green-600">
+                            ${total12MonthIncome.toFixed(2)}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                            Avg: ${(total12MonthIncome / 12).toFixed(2)}/month
+                        </p>
+                        <div className="mt-2 flex items-center gap-1 text-xs text-green-600">
+                            <ArrowUpRight className="h-3 w-3" />
+                            Last 12 months total
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="overflow-hidden border-2 shadow-lg hover:shadow-xl transition-shadow duration-300">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-linear-to-br from-red-50 to-rose-50 dark:from-red-950/20 dark:to-rose-950/20">
+                        <CardTitle className="text-sm font-medium">12-Month Expenses</CardTitle>
+                        <TrendingDown className="h-5 w-5 text-red-600" />
+                    </CardHeader>
+                    <CardContent className="pt-4">
+                        <div className="text-2xl sm:text-3xl font-bold text-red-600">
+                            ${total12MonthExpenses.toFixed(2)}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                            Avg: ${(total12MonthExpenses / 12).toFixed(2)}/month
+                        </p>
+                        <div className="mt-2 flex items-center gap-1 text-xs text-red-600">
+                            <ArrowDownRight className="h-3 w-3" />
+                            Last 12 months total
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="overflow-hidden border-2 shadow-lg hover:shadow-xl transition-shadow duration-300">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-linear-to-br from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20">
+                        <CardTitle className="text-sm font-medium">12-Month Savings</CardTitle>
+                        <PiggyBank className="h-5 w-5 text-blue-600" />
+                    </CardHeader>
+                    <CardContent className="pt-4">
+                        <div className={`text-2xl sm:text-3xl font-bold ${total12MonthSavings >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                            ${total12MonthSavings.toFixed(2)}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                            Avg: ${(total12MonthSavings / 12).toFixed(2)}/month
+                        </p>
+                        <div className="mt-2 flex items-center gap-1 text-xs text-blue-600">
+                            <PiggyBank className="h-3 w-3" />
+                            {((total12MonthSavings / total12MonthIncome) * 100).toFixed(1)}% savings rate
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* Month-wise Breakdown Cards (Last 12 Months) */}
+            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
+                <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                        <Calendar className="h-5 w-5" />
+                        Monthly Breakdown (Last 12 Months)
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        {monthlyData.map((month, index) => {
+                            const savingsPositive = month.savings >= 0;
+                            return (
+                                <Card key={index} className="overflow-hidden border shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105">
+                                    <CardHeader className="pb-3 bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+                                        <CardTitle className="text-sm font-semibold text-center">
+                                            {month.month}
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="pt-4 space-y-2">
+                                        <div className="flex items-center justify-between text-xs">
+                                            <span className="text-muted-foreground flex items-center gap-1">
+                                                <ArrowUpRight className="h-3 w-3 text-green-600" />
+                                                Income
+                                            </span>
+                                            <span className="font-semibold text-green-600">
+                                                ${month.income.toFixed(2)}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center justify-between text-xs">
+                                            <span className="text-muted-foreground flex items-center gap-1">
+                                                <ArrowDownRight className="h-3 w-3 text-red-600" />
+                                                Expenses
+                                            </span>
+                                            <span className="font-semibold text-red-600">
+                                                ${month.expenses.toFixed(2)}
+                                            </span>
+                                        </div>
+                                        <div className="pt-2 border-t">
+                                            <div className="flex items-center justify-between text-xs">
+                                                <span className="text-muted-foreground flex items-center gap-1">
+                                                    <PiggyBank className="h-3 w-3" />
+                                                    Savings
+                                                </span>
+                                                <span className={`font-bold ${savingsPositive ? 'text-blue-600' : 'text-red-600'}`}>
+                                                    ${month.savings.toFixed(2)}
+                                                </span>
+                                            </div>
+                                            {month.income > 0 && (
+                                                <div className="mt-2">
+                                                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+                                                        <div
+                                                            className={`h-1.5 rounded-full ${savingsPositive ? 'bg-blue-600' : 'bg-red-600'}`}
+                                                            style={{
+                                                                width: `${Math.min(Math.abs((month.savings / month.income) * 100), 100)}%`,
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground text-center mt-1">
+                                                        {((month.savings / month.income) * 100).toFixed(0)}% rate
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            );
+                        })}
+                    </div>
                 </CardContent>
             </Card>
 
