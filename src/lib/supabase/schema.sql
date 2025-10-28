@@ -62,6 +62,24 @@ CREATE TABLE IF NOT EXISTS user_settings (
         TIME ZONE DEFAULT NOW()
 );
 
+-- Create category_budgets table for budget tracking
+CREATE TABLE IF NOT EXISTS category_budgets (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
+    user_id UUID NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
+    category_id UUID NOT NULL REFERENCES categories (id) ON DELETE CASCADE,
+    amount DECIMAL(10, 2) NOT NULL,
+    period TEXT NOT NULL CHECK (
+        period IN ('monthly', 'yearly')
+    ) DEFAULT 'monthly',
+    created_at TIMESTAMP
+    WITH
+        TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP
+    WITH
+        TIME ZONE DEFAULT NOW(),
+        UNIQUE (user_id, category_id, period)
+);
+
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_categories_user_id ON categories (user_id);
 
@@ -75,6 +93,10 @@ CREATE INDEX IF NOT EXISTS idx_savings_goals_user_id ON savings_goals (user_id);
 
 CREATE INDEX IF NOT EXISTS idx_user_settings_user_id ON user_settings (user_id);
 
+CREATE INDEX IF NOT EXISTS idx_category_budgets_user_id ON category_budgets (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_category_budgets_category_id ON category_budgets (category_id);
+
 -- Enable Row Level Security
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 
@@ -83,6 +105,8 @@ ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE savings_goals ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE user_settings ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE category_budgets ENABLE ROW LEVEL SECURITY;
 
 -- Categories policies
 CREATE POLICY "Users can view own categories" ON categories FOR
@@ -139,3 +163,17 @@ CREATE POLICY "Users can update own settings" ON user_settings FOR
 UPDATE USING (auth.uid () = user_id);
 
 CREATE POLICY "Users can delete own settings" ON user_settings FOR DELETE USING (auth.uid () = user_id);
+
+-- Category budgets policies
+CREATE POLICY "Users can view own budgets" ON category_budgets FOR
+SELECT USING (auth.uid () = user_id);
+
+CREATE POLICY "Users can create own budgets" ON category_budgets FOR
+INSERT
+WITH
+    CHECK (auth.uid () = user_id);
+
+CREATE POLICY "Users can update own budgets" ON category_budgets FOR
+UPDATE USING (auth.uid () = user_id);
+
+CREATE POLICY "Users can delete own budgets" ON category_budgets FOR DELETE USING (auth.uid () = user_id);

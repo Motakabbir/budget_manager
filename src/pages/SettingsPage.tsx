@@ -21,7 +21,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 export default function SettingsPage() {
-    const { user, setUser, savingsGoals, fetchSavingsGoals, addSavingsGoal, updateSavingsGoal, deleteSavingsGoal, userSettings, fetchUserSettings, saveUserSettings } = useBudgetStore();
+    const { user, setUser, savingsGoals, fetchSavingsGoals, addSavingsGoal, updateSavingsGoal, deleteSavingsGoal, userSettings, fetchUserSettings, saveUserSettings, categories, fetchCategories, categoryBudgets, fetchCategoryBudgets, saveCategoryBudget, deleteCategoryBudget } = useBudgetStore();
     const [loading, setLoading] = useState(true);
     const [profileData, setProfileData] = useState({
         full_name: '',
@@ -37,6 +37,13 @@ export default function SettingsPage() {
         name: '',
         target_amount: '',
         deadline: new Date(),
+    });
+    const [isBudgetDialogOpen, setIsBudgetDialogOpen] = useState(false);
+    const [editingBudget, setEditingBudget] = useState<any>(null);
+    const [budgetFormData, setBudgetFormData] = useState({
+        category_id: '',
+        amount: '',
+        period: 'monthly' as 'monthly' | 'yearly',
     });
 
     useEffect(() => {
@@ -59,10 +66,12 @@ export default function SettingsPage() {
             }
             await fetchSavingsGoals();
             await fetchUserSettings();
+            await fetchCategories();
+            await fetchCategoryBudgets();
             setLoading(false);
         };
         loadData();
-    }, [setUser, fetchSavingsGoals, fetchUserSettings]);
+    }, [setUser, fetchSavingsGoals, fetchUserSettings, fetchCategories, fetchCategoryBudgets]);
 
     // Update opening balance form when settings are loaded
     useEffect(() => {
@@ -143,6 +152,25 @@ export default function SettingsPage() {
                     current_amount: goal.current_amount + parseFloat(amount),
                 });
             }
+        }
+    };
+
+    const handleBudgetSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        await saveCategoryBudget({
+            category_id: budgetFormData.category_id,
+            amount: parseFloat(budgetFormData.amount),
+            period: budgetFormData.period,
+        });
+
+        setIsBudgetDialogOpen(false);
+        setBudgetFormData({ category_id: '', amount: '', period: 'monthly' });
+    };
+
+    const handleDeleteBudget = async (id: string) => {
+        if (confirm('Are you sure you want to delete this budget?')) {
+            await deleteCategoryBudget(id);
         }
     };
 
@@ -411,6 +439,140 @@ export default function SettingsPage() {
                                                 onClick={() => handleContributeToGoal(goal.id)}
                                             >
                                                 Add Contribution
+                                            </Button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            {/* Category Budgets */}
+            <Card className="border-2 border-purple-200 dark:border-purple-900">
+                <CardHeader className="bg-linear-to-r from-purple-50 to-indigo-50 dark:from-purple-950/20 dark:to-indigo-950/20">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <CardTitle className="flex items-center gap-2">
+                                <Target className="h-5 w-5 text-purple-600" />
+                                Category Budgets
+                            </CardTitle>
+                            <CardDescription>Set monthly or yearly budgets for expense categories</CardDescription>
+                        </div>
+                        <Dialog open={isBudgetDialogOpen} onOpenChange={setIsBudgetDialogOpen}>
+                            <DialogTrigger asChild>
+                                <Button
+                                    className="bg-purple-600 hover:bg-purple-700"
+                                    onClick={() => {
+                                        setEditingBudget(null);
+                                        setBudgetFormData({ category_id: '', amount: '', period: 'monthly' });
+                                    }}
+                                >
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Add Budget
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>Set Category Budget</DialogTitle>
+                                </DialogHeader>
+                                <form onSubmit={handleBudgetSubmit} className="space-y-4">
+                                    <div>
+                                        <Label htmlFor="category">Category</Label>
+                                        <select
+                                            id="category"
+                                            className="w-full px-3 py-2 border rounded-md"
+                                            value={budgetFormData.category_id}
+                                            onChange={(e) =>
+                                                setBudgetFormData({ ...budgetFormData, category_id: e.target.value })
+                                            }
+                                            required
+                                        >
+                                            <option value="">Select a category</option>
+                                            {categories
+                                                .filter((c) => c.type === 'expense')
+                                                .map((category) => (
+                                                    <option key={category.id} value={category.id}>
+                                                        {category.name}
+                                                    </option>
+                                                ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="budget_amount">Budget Amount ($)</Label>
+                                        <Input
+                                            id="budget_amount"
+                                            type="number"
+                                            step="0.01"
+                                            value={budgetFormData.amount}
+                                            onChange={(e) =>
+                                                setBudgetFormData({ ...budgetFormData, amount: e.target.value })
+                                            }
+                                            placeholder="0.00"
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="period">Period</Label>
+                                        <select
+                                            id="period"
+                                            className="w-full px-3 py-2 border rounded-md"
+                                            value={budgetFormData.period}
+                                            onChange={(e) =>
+                                                setBudgetFormData({ ...budgetFormData, period: e.target.value as 'monthly' | 'yearly' })
+                                            }
+                                        >
+                                            <option value="monthly">Monthly</option>
+                                            <option value="yearly">Yearly</option>
+                                        </select>
+                                    </div>
+                                    <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700">
+                                        Set Budget
+                                    </Button>
+                                </form>
+                            </DialogContent>
+                        </Dialog>
+                    </div>
+                </CardHeader>
+                <CardContent className="pt-6">
+                    {categoryBudgets.length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                            <Target className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                            <p>No budgets set yet</p>
+                            <p className="text-xs mt-1">Click "Add Budget" to set spending limits for your categories</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {categoryBudgets.map((budget) => {
+                                const category = categories.find((c) => c.id === budget.category_id);
+                                if (!category) return null;
+
+                                return (
+                                    <div
+                                        key={budget.id}
+                                        className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div
+                                                    className="w-4 h-4 rounded-full"
+                                                    style={{ backgroundColor: category.color }}
+                                                />
+                                                <div>
+                                                    <h3 className="font-semibold">{category.name}</h3>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        ${budget.amount.toFixed(2)} / {budget.period}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => handleDeleteBudget(budget.id)}
+                                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
                                             </Button>
                                         </div>
                                     </div>

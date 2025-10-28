@@ -42,12 +42,23 @@ interface UserSettings {
     updated_at?: string;
 }
 
+interface CategoryBudget {
+    id: string;
+    user_id: string;
+    category_id: string;
+    amount: number;
+    period: 'monthly' | 'yearly';
+    created_at?: string;
+    updated_at?: string;
+}
+
 interface BudgetStore {
     user: User | null;
     categories: Category[];
     transactions: Transaction[];
     savingsGoals: SavingsGoal[];
     userSettings: UserSettings | null;
+    categoryBudgets: CategoryBudget[];
     isLoading: boolean;
 
     setUser: (user: User | null) => void;
@@ -55,12 +66,14 @@ interface BudgetStore {
     setTransactions: (transactions: Transaction[]) => void;
     setSavingsGoals: (goals: SavingsGoal[]) => void;
     setUserSettings: (settings: UserSettings | null) => void;
+    setCategoryBudgets: (budgets: CategoryBudget[]) => void;
     setLoading: (loading: boolean) => void;
 
     fetchCategories: () => Promise<void>;
     fetchTransactions: (startDate?: string, endDate?: string) => Promise<void>;
     fetchSavingsGoals: () => Promise<void>;
     fetchUserSettings: () => Promise<void>;
+    fetchCategoryBudgets: () => Promise<void>;
 
     addCategory: (category: Omit<Category, 'id'>) => Promise<void>;
     updateCategory: (id: string, updates: Partial<Category>) => Promise<void>;
@@ -76,6 +89,10 @@ interface BudgetStore {
 
     saveUserSettings: (settings: { opening_balance: number; opening_date: string }) => Promise<void>;
     updateUserSettings: (updates: Partial<UserSettings>) => Promise<void>;
+
+    saveCategoryBudget: (budget: { category_id: string; amount: number; period: 'monthly' | 'yearly' }) => Promise<void>;
+    updateCategoryBudget: (id: string, updates: Partial<CategoryBudget>) => Promise<void>;
+    deleteCategoryBudget: (id: string) => Promise<void>;
 }
 
 export const useBudgetStore = create<BudgetStore>((set, get) => ({
@@ -84,6 +101,7 @@ export const useBudgetStore = create<BudgetStore>((set, get) => ({
     transactions: [],
     savingsGoals: [],
     userSettings: null,
+    categoryBudgets: [],
     isLoading: false,
 
     setUser: (user) => set({ user }),
@@ -91,6 +109,7 @@ export const useBudgetStore = create<BudgetStore>((set, get) => ({
     setTransactions: (transactions) => set({ transactions }),
     setSavingsGoals: (goals) => set({ savingsGoals: goals }),
     setUserSettings: (settings) => set({ userSettings: settings }),
+    setCategoryBudgets: (budgets) => set({ categoryBudgets: budgets }),
     setLoading: (loading) => set({ isLoading: loading }),
 
     fetchCategories: async () => {
@@ -301,6 +320,63 @@ export const useBudgetStore = create<BudgetStore>((set, get) => ({
 
         if (!error) {
             await get().fetchUserSettings();
+        }
+    },
+
+    fetchCategoryBudgets: async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data, error } = await supabase
+            .from('category_budgets')
+            .select('*')
+            .eq('user_id', user.id);
+
+        if (!error && data) {
+            set({ categoryBudgets: data as any });
+        }
+    },
+
+    saveCategoryBudget: async (budget) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { error } = await supabase
+            .from('category_budgets')
+            .upsert({
+                user_id: user.id,
+                category_id: budget.category_id,
+                amount: budget.amount,
+                period: budget.period,
+                updated_at: new Date().toISOString(),
+            }, {
+                onConflict: 'user_id,category_id,period'
+            }) as any;
+
+        if (!error) {
+            await get().fetchCategoryBudgets();
+        }
+    },
+
+    updateCategoryBudget: async (id, updates) => {
+        const { error } = await supabase
+            .from('category_budgets')
+            .update({ ...updates, updated_at: new Date().toISOString() } as any)
+            .eq('id', id);
+
+        if (!error) {
+            await get().fetchCategoryBudgets();
+        }
+    },
+
+    deleteCategoryBudget: async (id) => {
+        const { error } = await supabase
+            .from('category_budgets')
+            .delete()
+            .eq('id', id);
+
+        if (!error) {
+            await get().fetchCategoryBudgets();
         }
     },
 }));
