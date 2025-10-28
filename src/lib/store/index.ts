@@ -33,22 +33,34 @@ interface User {
     full_name: string | null;
 }
 
+interface UserSettings {
+    id: string;
+    user_id: string;
+    opening_balance: number;
+    opening_date: string;
+    created_at?: string;
+    updated_at?: string;
+}
+
 interface BudgetStore {
     user: User | null;
     categories: Category[];
     transactions: Transaction[];
     savingsGoals: SavingsGoal[];
+    userSettings: UserSettings | null;
     isLoading: boolean;
 
     setUser: (user: User | null) => void;
     setCategories: (categories: Category[]) => void;
     setTransactions: (transactions: Transaction[]) => void;
     setSavingsGoals: (goals: SavingsGoal[]) => void;
+    setUserSettings: (settings: UserSettings | null) => void;
     setLoading: (loading: boolean) => void;
 
     fetchCategories: () => Promise<void>;
     fetchTransactions: (startDate?: string, endDate?: string) => Promise<void>;
     fetchSavingsGoals: () => Promise<void>;
+    fetchUserSettings: () => Promise<void>;
 
     addCategory: (category: Omit<Category, 'id'>) => Promise<void>;
     updateCategory: (id: string, updates: Partial<Category>) => Promise<void>;
@@ -61,6 +73,9 @@ interface BudgetStore {
     addSavingsGoal: (goal: Omit<SavingsGoal, 'id' | 'current_amount'>) => Promise<void>;
     updateSavingsGoal: (id: string, updates: Partial<SavingsGoal>) => Promise<void>;
     deleteSavingsGoal: (id: string) => Promise<void>;
+
+    saveUserSettings: (settings: { opening_balance: number; opening_date: string }) => Promise<void>;
+    updateUserSettings: (updates: Partial<UserSettings>) => Promise<void>;
 }
 
 export const useBudgetStore = create<BudgetStore>((set, get) => ({
@@ -68,12 +83,14 @@ export const useBudgetStore = create<BudgetStore>((set, get) => ({
     categories: [],
     transactions: [],
     savingsGoals: [],
+    userSettings: null,
     isLoading: false,
 
     setUser: (user) => set({ user }),
     setCategories: (categories) => set({ categories }),
     setTransactions: (transactions) => set({ transactions }),
     setSavingsGoals: (goals) => set({ savingsGoals: goals }),
+    setUserSettings: (settings) => set({ userSettings: settings }),
     setLoading: (loading) => set({ isLoading: loading }),
 
     fetchCategories: async () => {
@@ -130,6 +147,21 @@ export const useBudgetStore = create<BudgetStore>((set, get) => ({
 
         if (!error && data) {
             set({ savingsGoals: data });
+        }
+    },
+
+    fetchUserSettings: async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data, error } = await supabase
+            .from('user_settings')
+            .select('*')
+            .eq('user_id', user.id)
+            .single();
+
+        if (!error && data) {
+            set({ userSettings: data });
         }
     },
 
@@ -235,6 +267,40 @@ export const useBudgetStore = create<BudgetStore>((set, get) => ({
 
         if (!error) {
             await get().fetchSavingsGoals();
+        }
+    },
+
+    saveUserSettings: async (settings) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { error } = await supabase
+            .from('user_settings')
+            .upsert({
+                user_id: user.id,
+                opening_balance: settings.opening_balance,
+                opening_date: settings.opening_date,
+                updated_at: new Date().toISOString(),
+            }, {
+                onConflict: 'user_id'
+            });
+
+        if (!error) {
+            await get().fetchUserSettings();
+        }
+    },
+
+    updateUserSettings: async (updates) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { error } = await supabase
+            .from('user_settings')
+            .update({ ...updates, updated_at: new Date().toISOString() })
+            .eq('user_id', user.id);
+
+        if (!error) {
+            await get().fetchUserSettings();
         }
     },
 }));

@@ -17,6 +17,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import {
     Table,
     TableBody,
@@ -26,8 +27,8 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { useBudgetStore } from '@/lib/store';
-import { Plus, Pencil, Trash2, Download, CalendarIcon, PlusCircle } from 'lucide-react';
-import { format } from 'date-fns';
+import { Plus, Pencil, Trash2, Download, CalendarIcon, PlusCircle, TrendingUp, Filter } from 'lucide-react';
+import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
@@ -44,6 +45,7 @@ export default function IncomePage() {
     const [isOpen, setIsOpen] = useState(false);
     const [showNewCategory, setShowNewCategory] = useState(false);
     const [editingTransaction, setEditingTransaction] = useState<any>(null);
+    const [selectedMonth, setSelectedMonth] = useState<string>('all');
     const [formData, setFormData] = useState({
         category_id: '',
         amount: '',
@@ -63,9 +65,49 @@ export default function IncomePage() {
         loadData();
     }, [fetchTransactions, fetchCategories]);
 
-    const incomeTransactions = transactions.filter((t) => t.type === 'income');
+    // Generate last 12 months for filter
+    const monthOptions = Array.from({ length: 12 }, (_, i) => {
+        const date = subMonths(new Date(), i);
+        return {
+            value: format(date, 'yyyy-MM'),
+            label: format(date, 'MMMM yyyy'),
+        };
+    });
+
+    // Filter transactions by selected month
+    const getFilteredTransactions = () => {
+        if (selectedMonth === 'all') {
+            return transactions.filter((t) => t.type === 'income');
+        }
+
+        const [year, month] = selectedMonth.split('-');
+        const monthStart = startOfMonth(new Date(parseInt(year), parseInt(month) - 1));
+        const monthEnd = endOfMonth(new Date(parseInt(year), parseInt(month) - 1));
+
+        return transactions.filter((t) => {
+            if (t.type !== 'income') return false;
+            const transDate = new Date(t.date);
+            return transDate >= monthStart && transDate <= monthEnd;
+        });
+    };
+
+    const incomeTransactions = getFilteredTransactions();
     const incomeCategories = categories.filter((c) => c.type === 'income');
     const totalIncome = incomeTransactions.reduce((sum, t) => sum + t.amount, 0);
+
+    // Category-wise subtotals
+    const categorySubtotals = incomeCategories.map((category) => {
+        const categoryTransactions = incomeTransactions.filter((t) => t.category_id === category.id);
+        const subtotal = categoryTransactions.reduce((sum, t) => sum + t.amount, 0);
+        const percentage = totalIncome > 0 ? (subtotal / totalIncome) * 100 : 0;
+
+        return {
+            ...category,
+            subtotal,
+            percentage,
+            count: categoryTransactions.length,
+        };
+    }).filter((c) => c.subtotal > 0).sort((a, b) => b.subtotal - a.subtotal);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -329,6 +371,36 @@ export default function IncomePage() {
                 </div>
             </div>
 
+            {/* Month Filter */}
+            <Card className="shadow-lg">
+                <CardContent className="pt-6">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                        <div className="flex items-center gap-2">
+                            <Filter className="h-5 w-5 text-muted-foreground" />
+                            <Label className="text-sm font-medium">Filter by Month</Label>
+                        </div>
+                        <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                            <SelectTrigger className="w-full sm:w-[200px]">
+                                <SelectValue placeholder="Select month" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Time</SelectItem>
+                                {monthOptions.map((option) => (
+                                    <SelectItem key={option.value} value={option.value}>
+                                        {option.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        {selectedMonth !== 'all' && (
+                            <Badge variant="secondary" className="hidden sm:flex">
+                                {incomeTransactions.length} transactions
+                            </Badge>
+                        )}
+                    </div>
+                </CardContent>
+            </Card>
+
             <Card className="overflow-hidden border-2 shadow-lg">
                 <CardHeader className="bg-linear-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20">
                     <CardTitle className="flex items-center justify-between text-lg sm:text-xl">
@@ -337,6 +409,56 @@ export default function IncomePage() {
                     </CardTitle>
                 </CardHeader>
             </Card>
+
+            {/* Category Breakdown */}
+            {categorySubtotals.length > 0 && (
+                <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <TrendingUp className="h-5 w-5" />
+                            Income by Category
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-4">
+                            {categorySubtotals.map((category, index) => (
+                                <div key={category.id} className="space-y-2">
+                                    <div className="flex items-center justify-between text-sm">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-muted-foreground w-4">{index + 1}.</span>
+                                            <div
+                                                className="w-3 h-3 rounded-full"
+                                                style={{ backgroundColor: category.color }}
+                                            />
+                                            <span className="font-medium">{category.name}</span>
+                                            <Badge variant="outline" className="ml-2 text-xs">
+                                                {category.count} {category.count === 1 ? 'transaction' : 'transactions'}
+                                            </Badge>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-muted-foreground">
+                                                {category.percentage.toFixed(1)}%
+                                            </span>
+                                            <span className="font-bold text-green-600">
+                                                ${category.subtotal.toFixed(2)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="w-full bg-muted rounded-full h-2">
+                                        <div
+                                            className="h-2 rounded-full transition-all duration-300"
+                                            style={{
+                                                width: `${category.percentage}%`,
+                                                backgroundColor: category.color,
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
 
             <Card className="shadow-lg">
                 <CardHeader>

@@ -48,6 +48,20 @@ CREATE TABLE IF NOT EXISTS savings_goals (
         TIME ZONE DEFAULT NOW()
 );
 
+-- Create user_settings table for opening balance
+CREATE TABLE IF NOT EXISTS user_settings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
+    user_id UUID NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE UNIQUE,
+    opening_balance DECIMAL(10, 2) NOT NULL DEFAULT 0,
+    opening_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    created_at TIMESTAMP
+    WITH
+        TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP
+    WITH
+        TIME ZONE DEFAULT NOW()
+);
+
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_categories_user_id ON categories (user_id);
 
@@ -59,12 +73,16 @@ CREATE INDEX IF NOT EXISTS idx_transactions_category_id ON transactions (categor
 
 CREATE INDEX IF NOT EXISTS idx_savings_goals_user_id ON savings_goals (user_id);
 
+CREATE INDEX IF NOT EXISTS idx_user_settings_user_id ON user_settings (user_id);
+
 -- Enable Row Level Security
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE savings_goals ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE user_settings ENABLE ROW LEVEL SECURITY;
 
 -- Categories policies
 CREATE POLICY "Users can view own categories" ON categories FOR
@@ -107,3 +125,17 @@ CREATE POLICY "Users can update own savings goals" ON savings_goals FOR
 UPDATE USING (auth.uid () = user_id);
 
 CREATE POLICY "Users can delete own savings goals" ON savings_goals FOR DELETE USING (auth.uid () = user_id);
+
+-- User settings policies
+CREATE POLICY "Users can view own settings" ON user_settings FOR
+SELECT USING (auth.uid () = user_id);
+
+CREATE POLICY "Users can create own settings" ON user_settings FOR
+INSERT
+WITH
+    CHECK (auth.uid () = user_id);
+
+CREATE POLICY "Users can update own settings" ON user_settings FOR
+UPDATE USING (auth.uid () = user_id);
+
+CREATE POLICY "Users can delete own settings" ON user_settings FOR DELETE USING (auth.uid () = user_id);

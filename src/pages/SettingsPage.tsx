@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useBudgetStore } from '@/lib/store';
 import { supabase } from '@/lib/supabase/client';
-import { Plus, Pencil, Trash2, Target } from 'lucide-react';
+import { Plus, Pencil, Trash2, Target, DollarSign, CalendarIcon } from 'lucide-react';
 import {
     Dialog,
     DialogContent,
@@ -21,11 +21,15 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 export default function SettingsPage() {
-    const { user, setUser, savingsGoals, fetchSavingsGoals, addSavingsGoal, updateSavingsGoal, deleteSavingsGoal } = useBudgetStore();
+    const { user, setUser, savingsGoals, fetchSavingsGoals, addSavingsGoal, updateSavingsGoal, deleteSavingsGoal, userSettings, fetchUserSettings, saveUserSettings } = useBudgetStore();
     const [loading, setLoading] = useState(true);
     const [profileData, setProfileData] = useState({
         full_name: '',
         email: '',
+    });
+    const [openingBalanceData, setOpeningBalanceData] = useState({
+        opening_balance: '0',
+        opening_date: new Date(),
     });
     const [isGoalDialogOpen, setIsGoalDialogOpen] = useState(false);
     const [editingGoal, setEditingGoal] = useState<any>(null);
@@ -54,10 +58,21 @@ export default function SettingsPage() {
                 }
             }
             await fetchSavingsGoals();
+            await fetchUserSettings();
             setLoading(false);
         };
         loadData();
-    }, [setUser, fetchSavingsGoals]);
+    }, [setUser, fetchSavingsGoals, fetchUserSettings]);
+
+    // Update opening balance form when settings are loaded
+    useEffect(() => {
+        if (userSettings) {
+            setOpeningBalanceData({
+                opening_balance: userSettings.opening_balance.toString(),
+                opening_date: new Date(userSettings.opening_date),
+            });
+        }
+    }, [userSettings]);
 
     const handleProfileUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -70,6 +85,17 @@ export default function SettingsPage() {
             .eq('id', authUser.id);
 
         alert('Profile updated successfully!');
+    };
+
+    const handleOpeningBalanceSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        await saveUserSettings({
+            opening_balance: parseFloat(openingBalanceData.opening_balance),
+            opening_date: format(openingBalanceData.opening_date, 'yyyy-MM-dd'),
+        });
+
+        alert('Opening balance saved successfully!');
     };
 
     const handleGoalSubmit = async (e: React.FormEvent) => {
@@ -165,6 +191,65 @@ export default function SettingsPage() {
                         </form>
                     </CardContent>
                 </Card>
+
+                {/* Opening Balance Card */}
+                <Card className="border-2 border-green-200 dark:border-green-900">
+                    <CardHeader className="bg-linear-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20">
+                        <CardTitle className="flex items-center gap-2">
+                            <DollarSign className="h-5 w-5 text-green-600" />
+                            Account Opening Balance
+                        </CardTitle>
+                        <CardDescription>Set your initial account balance</CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-6">
+                        <form onSubmit={handleOpeningBalanceSubmit} className="space-y-4">
+                            <div>
+                                <Label htmlFor="opening_balance">Opening Balance ($)</Label>
+                                <Input
+                                    id="opening_balance"
+                                    type="number"
+                                    step="0.01"
+                                    value={openingBalanceData.opening_balance}
+                                    onChange={(e) =>
+                                        setOpeningBalanceData({ ...openingBalanceData, opening_balance: e.target.value })
+                                    }
+                                    placeholder="0.00"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="opening_date">Opening Date</Label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" className="w-full justify-start">
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {format(openingBalanceData.opening_date, 'PPP')}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar
+                                            mode="single"
+                                            selected={openingBalanceData.opening_date}
+                                            onSelect={(date) => date && setOpeningBalanceData({ ...openingBalanceData, opening_date: date })}
+                                            initialFocus
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+                            <Button type="submit" className="w-full bg-green-600 hover:bg-green-700">
+                                {userSettings ? 'Update Opening Balance' : 'Set Opening Balance'}
+                            </Button>
+                            {userSettings && (
+                                <p className="text-xs text-muted-foreground text-center">
+                                    Current: ${userSettings.opening_balance.toFixed(2)} (since {format(new Date(userSettings.opening_date), 'MMM dd, yyyy')})
+                                </p>
+                            )}
+                        </form>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2">
 
                 {/* Account Actions */}
                 <Card>
