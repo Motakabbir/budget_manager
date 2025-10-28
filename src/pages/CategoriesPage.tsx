@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -81,22 +79,28 @@ export default function CategoriesPage() {
     const expenseCategories = categories.filter((c) => c.type === 'expense');
 
     if (loading) {
-        return <div>Loading...</div>;
+        return (
+            <div className="flex items-center justify-center h-[50vh]">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+        );
     }
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
+        <div className="space-y-6 p-4 sm:p-6 lg:p-8">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold">Categories</h1>
-                    <p className="text-muted-foreground">Manage your income and expense categories</p>
+                    <h1 className="text-3xl sm:text-4xl font-bold bg-linear-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                        Categories
+                    </h1>
+                    <p className="text-muted-foreground mt-1">Manage your income and expense categories</p>
                 </div>
                 <Dialog open={isOpen} onOpenChange={setIsOpen}>
                     <DialogTrigger asChild>
                         <Button onClick={() => {
                             setEditingCategory(null);
                             setFormData({ name: '', type: 'expense', color: '#3b82f6' });
-                        }}>
+                        }} className="w-full sm:w-auto bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
                             <Plus className="mr-2 h-4 w-4" />
                             Add Category
                         </Button>
@@ -159,19 +163,19 @@ export default function CategoriesPage() {
 
             <div className="grid gap-6 md:grid-cols-2">
                 {/* Income Categories */}
-                <Card>
-                    <CardHeader>
+                <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
+                    <CardHeader className="bg-linear-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20">
                         <CardTitle>Income Categories</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <div className="space-y-2">
+                    <CardContent className="pt-6">
+                        <div className="space-y-3">
                             {incomeCategories.length === 0 ? (
-                                <p className="text-sm text-muted-foreground">No income categories yet</p>
+                                <p className="text-sm text-muted-foreground text-center py-8">No income categories yet</p>
                             ) : (
                                 incomeCategories.map((category) => (
                                     <div
                                         key={category.id}
-                                        className="flex items-center justify-between p-3 rounded-lg border"
+                                        className="flex items-center justify-between p-3 rounded-lg border hover:border-green-300 hover:shadow-md transition-all duration-200"
                                     >
                                         <div className="flex items-center gap-3">
                                             <div
@@ -207,19 +211,19 @@ export default function CategoriesPage() {
                 </Card>
 
                 {/* Expense Categories */}
-                <Card>
-                    <CardHeader>
+                <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
+                    <CardHeader className="bg-linear-to-r from-red-50 to-rose-50 dark:from-red-950/20 dark:to-rose-950/20">
                         <CardTitle>Expense Categories</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <div className="space-y-2">
+                    <CardContent className="pt-6">
+                        <div className="space-y-3">
                             {expenseCategories.length === 0 ? (
-                                <p className="text-sm text-muted-foreground">No expense categories yet</p>
+                                <p className="text-sm text-muted-foreground text-center py-8">No expense categories yet</p>
                             ) : (
                                 expenseCategories.map((category) => (
                                     <div
                                         key={category.id}
-                                        className="flex items-center justify-between p-3 rounded-lg border"
+                                        className="flex items-center justify-between p-3 rounded-lg border hover:border-red-300 hover:shadow-md transition-all duration-200"
                                     >
                                         <div className="flex items-center gap-3">
                                             <div

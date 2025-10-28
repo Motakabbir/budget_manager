@@ -1,21 +1,7 @@
--- Create profiles table
-CREATE TABLE IF NOT EXISTS profiles (
-    id UUID PRIMARY KEY REFERENCES auth.users (id) ON DELETE CASCADE,
-    email TEXT UNIQUE NOT NULL,
-    full_name TEXT,
-    avatar_url TEXT,
-    created_at TIMESTAMP
-    WITH
-        TIME ZONE DEFAULT NOW(),
-        updated_at TIMESTAMP
-    WITH
-        TIME ZONE DEFAULT NOW()
-);
-
 -- Create categories table
 CREATE TABLE IF NOT EXISTS categories (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
-    user_id UUID NOT NULL REFERENCES profiles (id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     type TEXT NOT NULL CHECK (type IN ('income', 'expense')),
     color TEXT NOT NULL DEFAULT '#3b82f6',
@@ -32,7 +18,7 @@ CREATE TABLE IF NOT EXISTS categories (
 -- Create transactions table
 CREATE TABLE IF NOT EXISTS transactions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
-    user_id UUID NOT NULL REFERENCES profiles (id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
     category_id UUID NOT NULL REFERENCES categories (id) ON DELETE CASCADE,
     amount DECIMAL(10, 2) NOT NULL,
     description TEXT,
@@ -49,7 +35,7 @@ CREATE TABLE IF NOT EXISTS transactions (
 -- Create savings_goals table
 CREATE TABLE IF NOT EXISTS savings_goals (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
-    user_id UUID NOT NULL REFERENCES profiles (id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     target_amount DECIMAL(10, 2) NOT NULL,
     current_amount DECIMAL(10, 2) NOT NULL DEFAULT 0,
@@ -74,20 +60,11 @@ CREATE INDEX IF NOT EXISTS idx_transactions_category_id ON transactions (categor
 CREATE INDEX IF NOT EXISTS idx_savings_goals_user_id ON savings_goals (user_id);
 
 -- Enable Row Level Security
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE savings_goals ENABLE ROW LEVEL SECURITY;
-
--- Profiles policies
-CREATE POLICY "Users can view own profile" ON profiles FOR
-SELECT USING (auth.uid () = id);
-
-CREATE POLICY "Users can update own profile" ON profiles FOR
-UPDATE USING (auth.uid () = id);
 
 -- Categories policies
 CREATE POLICY "Users can view own categories" ON categories FOR

@@ -1,7 +1,5 @@
-'use client';
-
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +9,7 @@ import { supabase } from '@/lib/supabase/client';
 import { Wallet } from 'lucide-react';
 
 export default function AuthPage() {
-    const router = useRouter();
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [signInData, setSignInData] = useState({ email: '', password: '' });
     const [signUpData, setSignUpData] = useState({ email: '', password: '', fullName: '' });
@@ -28,7 +26,7 @@ export default function AuthPage() {
         if (error) {
             alert(error.message);
         } else {
-            router.push('/dashboard');
+            navigate('/dashboard');
         }
         setLoading(false);
     };
@@ -50,7 +48,7 @@ export default function AuthPage() {
                 id: data.user.id,
                 email: signUpData.email,
                 full_name: signUpData.fullName,
-            });
+            } as any);
 
             alert('Account created! Please sign in.');
         }
