@@ -1,11 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { useBudgetStore } from '@/lib/store';
+import {
+    useTransactions,
+    useCategories,
+    useUserSettings,
+    useCategoryBudgets,
+    useSavingsGoals
+} from '@/lib/hooks/use-budget-queries';
+import { DashboardSkeleton } from '@/components/loading/LoadingSkeletons';
 import {
     BarChart,
     Bar,
@@ -30,22 +37,51 @@ import { format, startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, st
 import { DollarSign, TrendingUp, TrendingDown, Wallet, Download, Calendar, Filter, PiggyBank, AlertCircle, ArrowUpRight, ArrowDownRight, Target, Activity, Receipt } from 'lucide-react';
 import { exportMonthlyReport } from '@/lib/utils/export';
 
+type Transaction = {
+    id: string;
+    user_id: string;
+    category_id: string;
+    amount: number;
+    description: string | null;
+    date: string;
+    type: 'income' | 'expense';
+    created_at: string;
+    updated_at: string;
+    category?: {
+        id: string;
+        name: string;
+        type: 'income' | 'expense';
+        color: string;
+        icon: string | null;
+    } | null;
+};
+
+type Category = {
+    id: string;
+    user_id: string;
+    name: string;
+    type: 'income' | 'expense';
+    color: string;
+    icon: string | null;
+    created_at: string;
+    updated_at: string;
+};
+
 export default function DashboardPage() {
-    const { transactions, categories, fetchTransactions, fetchCategories, userSettings, fetchUserSettings, categoryBudgets, fetchCategoryBudgets, savingsGoals, fetchSavingsGoals } = useBudgetStore();
-    const [loading, setLoading] = useState(true);
+    // React Query hooks
+    const { data: transactions = [], isLoading: transactionsLoading } = useTransactions() as { data: Transaction[], isLoading: boolean };
+    const { data: categories = [], isLoading: categoriesLoading } = useCategories() as { data: Category[], isLoading: boolean };
+    const { data: userSettings, isLoading: settingsLoading } = useUserSettings();
+    const { data: categoryBudgets = [], isLoading: budgetsLoading } = useCategoryBudgets();
+    const { data: savingsGoals = [], isLoading: goalsLoading } = useSavingsGoals();
+
+    const loading = transactionsLoading || categoriesLoading || settingsLoading || budgetsLoading || goalsLoading;
+
     const [timePeriod, setTimePeriod] = useState<'day' | 'month' | 'year' | 'all' | 'custom'>('month');
     const [customDateRange, setCustomDateRange] = useState<{
         from: Date | undefined;
         to: Date | undefined;
     }>({ from: undefined, to: undefined });
-
-    useEffect(() => {
-        const loadData = async () => {
-            await Promise.all([fetchTransactions(), fetchCategories(), fetchUserSettings(), fetchCategoryBudgets(), fetchSavingsGoals()]);
-            setLoading(false);
-        };
-        loadData();
-    }, [fetchTransactions, fetchCategories, fetchUserSettings, fetchCategoryBudgets, fetchSavingsGoals]);
 
     // Filter transactions based on time period
     const getFilteredTransactions = () => {
@@ -2068,14 +2104,7 @@ export default function DashboardPage() {
     };
 
     if (loading) {
-        return (
-            <div className="flex items-center justify-center h-[60vh]">
-                <div className="text-center space-y-4">
-                    <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary mx-auto"></div>
-                    <p className="text-muted-foreground">Loading your financial data...</p>
-                </div>
-            </div>
-        );
+        return <DashboardSkeleton />;
     }
 
     return (

@@ -5,7 +5,19 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useBudgetStore } from '@/lib/store';
+import {
+    useCategories,
+    useSavingsGoals,
+    useAddSavingsGoal,
+    useUpdateSavingsGoal,
+    useDeleteSavingsGoal,
+    useUserSettings,
+    useSaveUserSettings,
+    useCategoryBudgets,
+    useSaveCategoryBudget,
+    useDeleteCategoryBudget
+} from '@/lib/hooks/use-budget-queries';
+import { SettingsPageSkeleton } from '@/components/loading/LoadingSkeletons';
 import { supabase } from '@/lib/supabase/client';
 import { Plus, Pencil, Trash2, Target, DollarSign, CalendarIcon } from 'lucide-react';
 import {
@@ -16,13 +28,72 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog';
 import { format } from 'date-fns';
+import { TransactionListSkeleton } from '@/components/loading/LoadingSkeletons';
 import { Progress } from '@/components/ui/progress';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { DataManagementCard } from '@/components/settings/DataManagementCard';
+
+type Category = {
+    id: string;
+    user_id: string;
+    name: string;
+    type: 'income' | 'expense';
+    color: string;
+    icon: string | null;
+    created_at: string;
+    updated_at: string;
+};
+
+type SavingsGoal = {
+    id: string;
+    user_id: string;
+    name: string;
+    target_amount: number;
+    current_amount: number;
+    deadline: string;
+    created_at: string;
+    updated_at: string;
+};
+
+type CategoryBudget = {
+    id: string;
+    user_id: string;
+    category_id: string;
+    amount: number;
+    period: 'monthly' | 'yearly';
+    created_at: string;
+    updated_at: string;
+    category?: Category;
+};
+
+type UserSettings = {
+    id: string;
+    user_id: string;
+    currency: string;
+    opening_balance: number;
+    opening_date: string;
+    created_at: string;
+    updated_at: string;
+};
 
 export default function SettingsPage() {
-    const { user, setUser, savingsGoals, fetchSavingsGoals, addSavingsGoal, updateSavingsGoal, deleteSavingsGoal, userSettings, fetchUserSettings, saveUserSettings, categories, fetchCategories, categoryBudgets, fetchCategoryBudgets, saveCategoryBudget, deleteCategoryBudget } = useBudgetStore();
-    const [loading, setLoading] = useState(true);
+    // React Query hooks
+    const { data: savingsGoals = [], isLoading: goalsLoading } = useSavingsGoals() as { data: SavingsGoal[], isLoading: boolean };
+    const { data: userSettings, isLoading: settingsLoading } = useUserSettings() as { data: UserSettings | null, isLoading: boolean };
+    const { data: categories = [], isLoading: categoriesLoading } = useCategories() as { data: Category[], isLoading: boolean };
+    const { data: categoryBudgets = [], isLoading: budgetsLoading } = useCategoryBudgets() as { data: CategoryBudget[], isLoading: boolean };
+
+    const addSavingsGoalMutation = useAddSavingsGoal();
+    const updateSavingsGoalMutation = useUpdateSavingsGoal();
+    const deleteSavingsGoalMutation = useDeleteSavingsGoal();
+    const saveUserSettingsMutation = useSaveUserSettings();
+    const saveCategoryBudgetMutation = useSaveCategoryBudget();
+    const deleteCategoryBudgetMutation = useDeleteCategoryBudget();
+
+    const loading = goalsLoading || settingsLoading || categoriesLoading || budgetsLoading;
+
+    const [user, setUser] = useState<any>(null);
     const [profileData, setProfileData] = useState({
         full_name: '',
         email: '',
@@ -64,14 +135,9 @@ export default function SettingsPage() {
                     });
                 }
             }
-            await fetchSavingsGoals();
-            await fetchUserSettings();
-            await fetchCategories();
-            await fetchCategoryBudgets();
-            setLoading(false);
         };
         loadData();
-    }, [setUser, fetchSavingsGoals, fetchUserSettings, fetchCategories, fetchCategoryBudgets]);
+    }, []);
 
     // Update opening balance form when settings are loaded
     useEffect(() => {
@@ -99,7 +165,7 @@ export default function SettingsPage() {
     const handleOpeningBalanceSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        await saveUserSettings({
+        await saveUserSettingsMutation.mutateAsync({
             opening_balance: parseFloat(openingBalanceData.opening_balance),
             opening_date: format(openingBalanceData.opening_date, 'yyyy-MM-dd'),
         });
@@ -117,9 +183,9 @@ export default function SettingsPage() {
         };
 
         if (editingGoal) {
-            await updateSavingsGoal(editingGoal.id, goalData);
+            await updateSavingsGoalMutation.mutateAsync({ id: editingGoal.id, updates: goalData });
         } else {
-            await addSavingsGoal(goalData);
+            await addSavingsGoalMutation.mutateAsync(goalData);
         }
 
         setIsGoalDialogOpen(false);
@@ -139,7 +205,7 @@ export default function SettingsPage() {
 
     const handleDeleteGoal = async (id: string) => {
         if (confirm('Are you sure you want to delete this savings goal?')) {
-            await deleteSavingsGoal(id);
+            await deleteSavingsGoalMutation.mutateAsync(id);
         }
     };
 
@@ -148,8 +214,11 @@ export default function SettingsPage() {
         if (amount && !isNaN(parseFloat(amount))) {
             const goal = savingsGoals.find((g) => g.id === goalId);
             if (goal) {
-                await updateSavingsGoal(goalId, {
-                    current_amount: goal.current_amount + parseFloat(amount),
+                await updateSavingsGoalMutation.mutateAsync({
+                    id: goalId,
+                    updates: {
+                        current_amount: goal.current_amount + parseFloat(amount),
+                    },
                 });
             }
         }
@@ -158,7 +227,7 @@ export default function SettingsPage() {
     const handleBudgetSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        await saveCategoryBudget({
+        await saveCategoryBudgetMutation.mutateAsync({
             category_id: budgetFormData.category_id,
             amount: parseFloat(budgetFormData.amount),
             period: budgetFormData.period,
@@ -170,21 +239,23 @@ export default function SettingsPage() {
 
     const handleDeleteBudget = async (id: string) => {
         if (confirm('Are you sure you want to delete this budget?')) {
-            await deleteCategoryBudget(id);
+            await deleteCategoryBudgetMutation.mutateAsync(id);
         }
     };
 
     if (loading) {
-        return <div>Loading...</div>;
+        return <SettingsPageSkeleton />;
     }
 
     return (
-        <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold">Settings & Profile</h1>
-                <p className="text-muted-foreground">Manage your account and savings goals</p>
-            </div>
 
+        <div className="space-y-6 p-4 sm:p-6 lg:p-8">
+            <div>
+                <h1 className="text-3xl sm:text-4xl font-bold bg-linear-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                    Settings & Profile
+                </h1>
+                <p className="text-muted-foreground mt-1">Manage your account and savings goals</p>
+            </div>
             <div className="grid gap-6 md:grid-cols-2">
                 {/* Profile Card */}
                 <Card>
@@ -313,6 +384,9 @@ export default function SettingsPage() {
                         </Button>
                     </CardContent>
                 </Card>
+
+                {/* Data Management */}
+                <DataManagementCard />
             </div>
 
             {/* Savings Goals */}

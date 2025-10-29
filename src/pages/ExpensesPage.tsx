@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,11 +26,45 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { useBudgetStore } from '@/lib/store';
+import { useTransactions, useCategories, useAddTransaction, useUpdateTransaction, useDeleteTransaction, useAddCategory } from '@/lib/hooks/use-budget-queries';
+import { TransactionListSkeleton } from '@/components/loading/LoadingSkeletons';
 import { Plus, Pencil, Trash2, Download, CalendarIcon, PlusCircle, TrendingDown, Filter } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
-import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+type Transaction = {
+    id: string;
+    user_id: string;
+    category_id: string;
+    amount: number;
+    description: string | null;
+    date: string;
+    type: 'income' | 'expense';
+    created_at: string;
+    updated_at: string;
+    category?: {
+        id: string;
+        name: string;
+        type: 'income' | 'expense';
+        color: string;
+        icon: string | null;
+    } | null;
+};
+
+type Category = {
+    id: string;
+    user_id: string;
+    name: string;
+    type: 'income' | 'expense';
+    color: string;
+    icon: string | null;
+    created_at: string;
+    updated_at: string;
+};
+
+import { exportTransactionsToCSV } from '@/lib/utils/backup';
 
 const COLORS = [
     '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16',
@@ -40,8 +74,16 @@ const COLORS = [
 ];
 
 export default function ExpensesPage() {
-    const { transactions, categories, fetchTransactions, fetchCategories, addTransaction, updateTransaction, deleteTransaction, addCategory } = useBudgetStore();
-    const [loading, setLoading] = useState(true);
+    // React Query hooks
+    const { data: transactions = [], isLoading: transactionsLoading } = useTransactions() as { data: Transaction[], isLoading: boolean };
+    const { data: categories = [], isLoading: categoriesLoading } = useCategories() as { data: Category[], isLoading: boolean };
+    const addTransactionMutation = useAddTransaction();
+    const updateTransactionMutation = useUpdateTransaction();
+    const deleteTransactionMutation = useDeleteTransaction();
+    const addCategoryMutation = useAddCategory();
+
+    const loading = transactionsLoading || categoriesLoading;
+
     const [isOpen, setIsOpen] = useState(false);
     const [showNewCategory, setShowNewCategory] = useState(false);
     const [editingTransaction, setEditingTransaction] = useState<any>(null);
@@ -56,14 +98,6 @@ export default function ExpensesPage() {
         name: '',
         color: '#ef4444',
     });
-
-    useEffect(() => {
-        const loadData = async () => {
-            await Promise.all([fetchTransactions(), fetchCategories()]);
-            setLoading(false);
-        };
-        loadData();
-    }, [fetchTransactions, fetchCategories]);
 
     // Generate last 12 months for filter
     const monthOptions = Array.from({ length: 12 }, (_, i) => {
@@ -121,9 +155,12 @@ export default function ExpensesPage() {
         };
 
         if (editingTransaction) {
-            await updateTransaction(editingTransaction.id, transactionData);
+            await updateTransactionMutation.mutateAsync({
+                id: editingTransaction.id,
+                updates: transactionData,
+            });
         } else {
-            await addTransaction(transactionData);
+            await addTransactionMutation.mutateAsync(transactionData);
         }
 
         setIsOpen(false);
@@ -134,16 +171,12 @@ export default function ExpensesPage() {
     const handleCreateCategory = async () => {
         if (!newCategoryData.name) return;
 
-        await addCategory({
+        const newCategory = await addCategoryMutation.mutateAsync({
             name: newCategoryData.name,
             type: 'expense',
             color: newCategoryData.color,
             icon: null,
-        });
-
-        await fetchCategories();
-        const updatedCategories = categories.filter((c) => c.type === 'expense');
-        const newCategory = updatedCategories.find((c) => c.name === newCategoryData.name);
+        }) as Category;
 
         if (newCategory) {
             setFormData({ ...formData, category_id: newCategory.id });
@@ -164,7 +197,7 @@ export default function ExpensesPage() {
 
     const handleDelete = async (id: string) => {
         if (confirm('Are you sure you want to delete this transaction?')) {
-            await deleteTransaction(id);
+            await deleteTransactionMutation.mutateAsync(id);
         }
     };
 
@@ -191,11 +224,7 @@ export default function ExpensesPage() {
     };
 
     if (loading) {
-        return (
-            <div className="flex items-center justify-center h-[50vh]">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-            </div>
-        );
+        return <TransactionListSkeleton />;
     }
 
     return (

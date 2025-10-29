@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,9 +17,21 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { useBudgetStore } from '@/lib/store';
+import { useCategories, useAddCategory, useUpdateCategory, useDeleteCategory } from '@/lib/hooks/use-budget-queries';
+import { CategoryListSkeleton } from '@/components/loading/LoadingSkeletons';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+
+type Category = {
+    id: string;
+    user_id: string;
+    name: string;
+    type: 'income' | 'expense';
+    color: string;
+    icon: string | null;
+    created_at: string;
+    updated_at: string;
+};
 
 const COLORS = [
     '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16',
@@ -29,8 +41,12 @@ const COLORS = [
 ];
 
 export default function CategoriesPage() {
-    const { categories, fetchCategories, addCategory, updateCategory, deleteCategory } = useBudgetStore();
-    const [loading, setLoading] = useState(true);
+    // React Query hooks
+    const { data: categories = [], isLoading } = useCategories() as { data: Category[], isLoading: boolean };
+    const addCategoryMutation = useAddCategory();
+    const updateCategoryMutation = useUpdateCategory();
+    const deleteCategoryMutation = useDeleteCategory();
+
     const [isOpen, setIsOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<any>(null);
     const [formData, setFormData] = useState({
@@ -39,22 +55,19 @@ export default function CategoriesPage() {
         color: '#3b82f6',
     });
 
-    useEffect(() => {
-        const loadData = async () => {
-            await fetchCategories();
-            setLoading(false);
-        };
-        loadData();
-    }, [fetchCategories]);
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (editingCategory) {
-            await updateCategory(editingCategory.id, formData);
+            await updateCategoryMutation.mutateAsync({
+                id: editingCategory.id,
+                updates: formData,
+            });
         } else {
-            await addCategory({ ...formData, icon: null });
-        } setIsOpen(false);
+            await addCategoryMutation.mutateAsync({ ...formData, icon: null });
+        }
+
+        setIsOpen(false);
         setEditingCategory(null);
         setFormData({ name: '', type: 'expense', color: '#3b82f6' });
     };
@@ -71,19 +84,15 @@ export default function CategoriesPage() {
 
     const handleDelete = async (id: string) => {
         if (confirm('Are you sure you want to delete this category?')) {
-            await deleteCategory(id);
+            await deleteCategoryMutation.mutateAsync(id);
         }
     };
 
     const incomeCategories = categories.filter((c) => c.type === 'income');
     const expenseCategories = categories.filter((c) => c.type === 'expense');
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center h-[50vh]">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-            </div>
-        );
+    if (isLoading) {
+        return <CategoryListSkeleton />;
     }
 
     return (
