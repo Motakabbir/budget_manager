@@ -142,6 +142,12 @@ export function useAddTransaction() {
 
     return useMutation({
         mutationFn: async (input: Omit<TransactionInput, 'date'> & { date: string }) => {
+            // Validate input with Zod
+            const validated = transactionSchema.parse({
+                ...input,
+                date: new Date(input.date),
+            });
+
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error('Not authenticated');
 
@@ -335,6 +341,12 @@ export function useSaveUserSettings() {
 
     return useMutation({
         mutationFn: async (input: { opening_balance: number; opening_date: string }) => {
+            // Validate input with Zod
+            const validated = userSettingsSchema.parse({
+                ...input,
+                opening_date: new Date(input.opening_date),
+            });
+
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error('Not authenticated');
 
