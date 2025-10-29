@@ -9,9 +9,12 @@ interface Transaction {
     date: string;
     type: 'income' | 'expense';
     category?: {
+        id: string;
         name: string;
+        type: 'income' | 'expense';
         color: string;
-    };
+        icon: string | null;
+    } | null;
 }
 
 export const exportToPDF = (

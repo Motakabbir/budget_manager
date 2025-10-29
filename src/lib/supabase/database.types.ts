@@ -6,7 +6,7 @@ export type Json =
     | { [key: string]: Json | undefined }
     | Json[]
 
-export interface Database {
+export type Database = {
     public: {
         Tables: {
             profiles: {
@@ -34,6 +34,7 @@ export interface Database {
                     created_at?: string
                     updated_at?: string
                 }
+                Relationships: []
             }
             categories: {
                 Row: {
@@ -66,6 +67,7 @@ export interface Database {
                     created_at?: string
                     updated_at?: string
                 }
+                Relationships: []
             }
             transactions: {
                 Row: {
@@ -101,6 +103,15 @@ export interface Database {
                     created_at?: string
                     updated_at?: string
                 }
+                Relationships: [
+                    {
+                        foreignKeyName: "transactions_category_id_fkey"
+                        columns: ["category_id"]
+                        isOneToOne: false
+                        referencedRelation: "categories"
+                        referencedColumns: ["id"]
+                    }
+                ]
             }
             savings_goals: {
                 Row: {
@@ -133,7 +144,85 @@ export interface Database {
                     created_at?: string
                     updated_at?: string
                 }
+                Relationships: []
             }
+            user_settings: {
+                Row: {
+                    id: string
+                    user_id: string
+                    opening_balance: number
+                    opening_date: string
+                    created_at: string
+                    updated_at: string
+                }
+                Insert: {
+                    id?: string
+                    user_id: string
+                    opening_balance?: number
+                    opening_date?: string
+                    created_at?: string
+                    updated_at?: string
+                }
+                Update: {
+                    id?: string
+                    user_id?: string
+                    opening_balance?: number
+                    opening_date?: string
+                    created_at?: string
+                    updated_at?: string
+                }
+                Relationships: []
+            }
+            category_budgets: {
+                Row: {
+                    id: string
+                    user_id: string
+                    category_id: string
+                    amount: number
+                    period: 'monthly' | 'yearly'
+                    created_at: string
+                    updated_at: string
+                }
+                Insert: {
+                    id?: string
+                    user_id: string
+                    category_id: string
+                    amount: number
+                    period?: 'monthly' | 'yearly'
+                    created_at?: string
+                    updated_at?: string
+                }
+                Update: {
+                    id?: string
+                    user_id?: string
+                    category_id?: string
+                    amount?: number
+                    period?: 'monthly' | 'yearly'
+                    created_at?: string
+                    updated_at?: string
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "category_budgets_category_id_fkey"
+                        columns: ["category_id"]
+                        isOneToOne: false
+                        referencedRelation: "categories"
+                        referencedColumns: ["id"]
+                    }
+                ]
+            }
+        }
+        Views: {
+            [_ in never]: never
+        }
+        Functions: {
+            [_ in never]: never
+        }
+        Enums: {
+            [_ in never]: never
+        }
+        CompositeTypes: {
+            [_ in never]: never
         }
     }
 }
