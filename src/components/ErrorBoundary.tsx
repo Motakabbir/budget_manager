@@ -2,6 +2,7 @@ import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle } from 'lucide-react';
+import { Sentry } from '@/lib/sentry';
 
 interface Props {
     children: ReactNode;
@@ -38,8 +39,14 @@ class ErrorBoundary extends Component<Props, State> {
             errorInfo,
         });
 
-        // You can log to an error reporting service here
-        // Example: Sentry.captureException(error);
+        // Log error to Sentry
+        Sentry.captureException(error, {
+            contexts: {
+                react: {
+                    componentStack: errorInfo.componentStack,
+                },
+            },
+        });
     }
 
     handleReset = () => {
@@ -69,7 +76,7 @@ class ErrorBoundary extends Component<Props, State> {
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            {process.env.NODE_ENV === 'development' && this.state.error && (
+                            {import.meta.env.DEV && this.state.error && (
                                 <details className="text-sm">
                                     <summary className="cursor-pointer font-medium mb-2">
                                         Error Details (Development Only)

@@ -7,6 +7,10 @@ import { QueryProvider } from '@/lib/providers/query-provider';
 import { ThemeProvider } from '@/lib/providers/theme-provider';
 import { Toaster } from '@/components/ui/sonner';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { initSentry } from '@/lib/sentry';
+
+// Initialize Sentry error monitoring
+initSentry();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>

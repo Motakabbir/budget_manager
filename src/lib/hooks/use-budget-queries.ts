@@ -4,6 +4,62 @@ import { toast } from 'sonner';
 import { transactionSchema, categorySchema, savingsGoalSchema, categoryBudgetSchema, userSettingsSchema } from '@/lib/validations/schemas';
 import type { TransactionInput, CategoryInput, SavingsGoalInput, CategoryBudgetInput, UserSettingsInput } from '@/lib/validations/schemas';
 
+// ============= TYPES =============
+
+export type Category = {
+    id: string;
+    user_id: string;
+    name: string;
+    type: 'income' | 'expense';
+    color: string;
+    icon: string | null;
+    created_at: string;
+    updated_at: string;
+};
+
+export type Transaction = {
+    id: string;
+    user_id: string;
+    category_id: string;
+    amount: number;
+    description: string | null;
+    date: string;
+    type: 'income' | 'expense';
+    created_at: string;
+    updated_at: string;
+    category?: Category | null;
+};
+
+export type SavingsGoal = {
+    id: string;
+    user_id: string;
+    name: string;
+    target_amount: number;
+    current_amount: number;
+    deadline: string | null;
+    created_at: string;
+    updated_at: string;
+};
+
+export type UserSettings = {
+    id: string;
+    user_id: string;
+    opening_balance: number;
+    opening_date: string;
+    created_at: string;
+    updated_at: string;
+};
+
+export type CategoryBudget = {
+    id: string;
+    user_id: string;
+    category_id: string;
+    amount: number;
+    period: 'monthly' | 'yearly';
+    created_at: string;
+    updated_at: string;
+};
+
 // Query Keys
 export const queryKeys = {
     transactions: (startDate?: string, endDate?: string) => ['transactions', startDate, endDate] as const,
@@ -16,7 +72,7 @@ export const queryKeys = {
 // ============= CATEGORIES =============
 
 export function useCategories() {
-    return useQuery({
+    return useQuery<Category[]>({
         queryKey: queryKeys.categories,
         queryFn: async () => {
             const { data: { user } } = await supabase.auth.getUser();
@@ -112,7 +168,7 @@ export function useDeleteCategory() {
 // ============= TRANSACTIONS =============
 
 export function useTransactions(startDate?: string, endDate?: string) {
-    return useQuery({
+    return useQuery<Transaction[]>({
         queryKey: queryKeys.transactions(startDate, endDate),
         queryFn: async () => {
             const { data: { user } } = await supabase.auth.getUser();
@@ -223,7 +279,7 @@ export function useDeleteTransaction() {
 // ============= SAVINGS GOALS =============
 
 export function useSavingsGoals() {
-    return useQuery({
+    return useQuery<SavingsGoal[]>({
         queryKey: queryKeys.savingsGoals,
         queryFn: async () => {
             const { data: { user } } = await supabase.auth.getUser();
@@ -318,7 +374,7 @@ export function useDeleteSavingsGoal() {
 // ============= USER SETTINGS =============
 
 export function useUserSettings() {
-    return useQuery({
+    return useQuery<UserSettings | null>({
         queryKey: queryKeys.userSettings,
         queryFn: async () => {
             const { data: { user } } = await supabase.auth.getUser();
@@ -380,7 +436,7 @@ export function useSaveUserSettings() {
 // ============= CATEGORY BUDGETS =============
 
 export function useCategoryBudgets() {
-    return useQuery({
+    return useQuery<CategoryBudget[]>({
         queryKey: queryKeys.categoryBudgets,
         queryFn: async () => {
             const { data: { user } } = await supabase.auth.getUser();

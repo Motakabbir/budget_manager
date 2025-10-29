@@ -10,7 +10,9 @@ import {
     useCategories,
     useUserSettings,
     useCategoryBudgets,
-    useSavingsGoals
+    useSavingsGoals,
+    type Transaction,
+    type Category,
 } from '@/lib/hooks/use-budget-queries';
 import { DashboardSkeleton } from '@/components/loading/LoadingSkeletons';
 import { NotificationStatusWidget } from '@/components/dashboard/NotificationStatusWidget';
@@ -38,40 +40,10 @@ import { format, startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, st
 import { DollarSign, TrendingUp, TrendingDown, Wallet, Download, Calendar, Filter, PiggyBank, AlertCircle, ArrowUpRight, ArrowDownRight, Target, Activity, Receipt } from 'lucide-react';
 import { exportMonthlyReport } from '@/lib/utils/export';
 
-type Transaction = {
-    id: string;
-    user_id: string;
-    category_id: string;
-    amount: number;
-    description: string | null;
-    date: string;
-    type: 'income' | 'expense';
-    created_at: string;
-    updated_at: string;
-    category?: {
-        id: string;
-        name: string;
-        type: 'income' | 'expense';
-        color: string;
-        icon: string | null;
-    } | null;
-};
-
-type Category = {
-    id: string;
-    user_id: string;
-    name: string;
-    type: 'income' | 'expense';
-    color: string;
-    icon: string | null;
-    created_at: string;
-    updated_at: string;
-};
-
 export default function DashboardPage() {
-    // React Query hooks
-    const { data: transactions = [], isLoading: transactionsLoading } = useTransactions() as { data: Transaction[], isLoading: boolean };
-    const { data: categories = [], isLoading: categoriesLoading } = useCategories() as { data: Category[], isLoading: boolean };
+    // React Query hooks with proper types
+    const { data: transactions = [], isLoading: transactionsLoading } = useTransactions();
+    const { data: categories = [], isLoading: categoriesLoading } = useCategories();
     const { data: userSettings, isLoading: settingsLoading } = useUserSettings();
     const { data: categoryBudgets = [], isLoading: budgetsLoading } = useCategoryBudgets();
     const { data: savingsGoals = [], isLoading: goalsLoading } = useSavingsGoals();
@@ -2965,7 +2937,7 @@ export default function DashboardPage() {
                     {mostExpensiveDay ? (
                         <div className="space-y-6">
                             {/* Main Display */}
-                            <div className="text-center p-6 rounded-xl bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-950/40 dark:to-pink-950/40 border-2 border-rose-300 dark:border-rose-700">
+                            <div className="text-center p-6 rounded-xl bg-linear-to-br from-rose-100 to-pink-100 dark:from-rose-950/40 dark:to-pink-950/40 border-2 border-rose-300 dark:border-rose-700">
                                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-rose-600 text-white mb-4">
                                     <Calendar className="h-8 w-8" />
                                 </div>
@@ -3033,7 +3005,7 @@ export default function DashboardPage() {
                                                 </div>
                                                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
                                                     <div
-                                                        className="h-full bg-gradient-to-r from-rose-500 to-pink-500 transition-all duration-500"
+                                                        className="h-full bg-linear-to-r from-rose-500 to-pink-500 transition-all duration-500"
                                                         style={{ width: `${percentage}%` }}
                                                     />
                                                 </div>
@@ -3948,7 +3920,7 @@ export default function DashboardPage() {
 
                                     {/* Center Flow Arrow */}
                                     <div className="hidden lg:flex flex-col items-center justify-center space-y-4">
-                                        <div className="text-center p-6 rounded-xl bg-gradient-to-br from-violet-100 to-fuchsia-100 dark:from-violet-950/40 dark:to-fuchsia-950/40 border-2 border-violet-300 dark:border-violet-700">
+                                        <div className="text-center p-6 rounded-xl bg-linear-to-br from-violet-100 to-fuchsia-100 dark:from-violet-950/40 dark:to-fuchsia-950/40 border-2 border-violet-300 dark:border-violet-700">
                                             <div className="text-xs text-muted-foreground mb-2">Total Flow</div>
                                             <div className="text-3xl font-bold text-violet-600 dark:text-violet-400 mb-2">
                                                 ${totalIncome.toFixed(0)}
@@ -4344,7 +4316,7 @@ export default function DashboardPage() {
                             {/* Timeline */}
                             <div className="relative">
                                 {/* Timeline Line */}
-                                <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-500 via-purple-500 to-pink-500" />
+                                <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-linear-to-b from-blue-500 via-purple-500 to-pink-500" />
 
                                 {/* Timeline Items */}
                                 <div className="space-y-6">
@@ -5824,7 +5796,7 @@ export default function DashboardPage() {
                                                         <div className="flex items-center gap-2 mb-1">
                                                             {transaction.category && (
                                                                 <div
-                                                                    className="w-2 h-2 rounded-full flex-shrink-0"
+                                                                    className="w-2 h-2 rounded-full shrink-0"
                                                                     style={{ backgroundColor: transaction.category.color }}
                                                                 />
                                                             )}
@@ -5843,7 +5815,7 @@ export default function DashboardPage() {
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div className="text-right flex-shrink-0">
+                                                <div className="text-right shrink-0">
                                                     <p className="text-lg font-bold text-red-600">
                                                         ${transaction.amount.toFixed(2)}
                                                     </p>
@@ -5886,7 +5858,7 @@ export default function DashboardPage() {
                                                         <div className="flex items-center gap-2 mb-1">
                                                             {transaction.category && (
                                                                 <div
-                                                                    className="w-2 h-2 rounded-full flex-shrink-0"
+                                                                    className="w-2 h-2 rounded-full shrink-0"
                                                                     style={{ backgroundColor: transaction.category.color }}
                                                                 />
                                                             )}
@@ -5905,7 +5877,7 @@ export default function DashboardPage() {
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div className="text-right flex-shrink-0">
+                                                <div className="text-right shrink-0">
                                                     <p className="text-lg font-bold text-green-600">
                                                         ${transaction.amount.toFixed(2)}
                                                     </p>
@@ -5936,7 +5908,7 @@ export default function DashboardPage() {
                                         <div className="flex items-center gap-3 flex-1 min-w-0">
                                             {transaction.category && (
                                                 <div
-                                                    className="w-3 h-3 rounded-full flex-shrink-0"
+                                                    className="w-3 h-3 rounded-full shrink-0"
                                                     style={{ backgroundColor: transaction.category.color }}
                                                 />
                                             )}
@@ -5951,7 +5923,7 @@ export default function DashboardPage() {
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="text-right flex-shrink-0 ml-3">
+                                        <div className="text-right shrink-0 ml-3">
                                             <p className={`text-sm font-bold ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
                                                 {transaction.type === 'income' ? '+' : '-'}${transaction.amount.toFixed(2)}
                                             </p>
