@@ -1,32 +1,58 @@
 # Budget Manager
 
-A comprehensive budget management application built with Next.js, Tailwind CSS, shadcn/ui, Recharts, and Supabase.
+A comprehensive budget management application built with Vite, React, TypeScript, Tailwind CSS, shadcn/ui, Recharts, and Supabase.
 
-## Features
+## ✨ Features
 
-- 📊 **Dashboard**: Visualize income vs expenses with interactive charts
-- 💰 **Income & Expense Tracking**: Add, edit, and delete transactions
-- 🏷️ **Category Management**: Organize transactions by custom categories
+### Core Features
+- 📊 **Interactive Dashboard**: Visualize income vs expenses with beautiful charts
+- 💰 **Income & Expense Tracking**: Add, edit, and delete transactions with ease
+- 🏷️ **Category Management**: Organize transactions by custom color-coded categories
 - 📈 **Financial Analytics**:
   - Total income vs expenses bar charts
   - Category-wise breakdown pie charts
   - Balance trends over time
   - Monthly financial summaries
-- 🎯 **Savings Goals**: Set and track financial targets
-- 📤 **Export Data**: Export transactions as CSV
+- 🎯 **Savings Goals**: Set and track financial targets with progress visualization
+- 📤 **Export Data**: Export transactions to CSV format
 - 🔐 **Authentication**: Secure user authentication with Supabase
-- 📱 **Responsive Design**: Works seamlessly on all devices
-- 🎨 **Modern UI**: Clean interface with shadcn/ui components
+
+### New in v1.0.0
+- 🎨 **Dark/Light Mode**: Full theme support with system preference detection
+- 📱 **Mobile-First Design**: Fully responsive design optimized for all devices
+- ♿ **Accessibility**: WCAG AA compliant with keyboard navigation support
+- 🚀 **PWA Support**: Install as a progressive web app on mobile devices
+- ⚡ **Smooth Animations**: Polished UI with 60fps transitions
+- � **Touch-Optimized**: Large tap targets and mobile-friendly interactions
+
+## 🎨 Theme Support
+
+Switch between Light, Dark, and System themes:
+- **Light Mode**: Clean, bright interface for daytime use
+- **Dark Mode**: Eye-friendly dark theme for low-light environments  
+- **System Mode**: Automatically matches your OS preference
+- **Persistent**: Your theme choice is saved and remembered
+
+## 📱 Responsive Design
+
+Works perfectly on all devices:
+- **Mobile**: Collapsible sidebar with hamburger menu (< 768px)
+- **Tablet**: Optimized layout for medium screens (768px - 1024px)
+- **Desktop**: Full-featured interface with fixed sidebar (> 1024px)
+- **Touch-Friendly**: Large tap targets (44x44px minimum) for mobile devices
 
 ## Tech Stack
 
-- **Frontend**: Next.js 15, TypeScript, Tailwind CSS
-- **UI Components**: shadcn/ui
+- **Frontend**: Vite, React 19, TypeScript
+- **Styling**: Tailwind CSS 4
+- **UI Components**: shadcn/ui (Radix UI primitives)
 - **Charts**: Recharts
 - **Backend**: Supabase (PostgreSQL + Auth)
 - **State Management**: Zustand
+- **Data Fetching**: TanStack Query (React Query)
 - **Date Handling**: date-fns
 - **Icons**: Lucide React
+- **Form Validation**: Zod
 
 ## Getting Started
 

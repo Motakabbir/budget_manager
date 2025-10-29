@@ -11,6 +11,7 @@ import {
     X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
 
@@ -53,12 +54,13 @@ export function Sidebar() {
             >
                 <div className="flex h-full flex-col">
                     {/* Logo */}
-                    <div className="flex h-16 items-center border-b px-6 bg-linear-to-r from-blue-600/10 to-purple-600/10">
+                    <div className="flex h-16 items-center justify-between border-b px-6 bg-linear-to-r from-blue-600/10 to-purple-600/10">
                         <h1 className="text-xl font-bold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Budget Manager</h1>
+                        <ThemeToggle />
                     </div>
 
                     {/* Navigation */}
-                    <nav className="flex-1 space-y-1 px-3 py-4">
+                    <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
                         {navigation.map((item) => {
                             const Icon = item.icon;
                             const isActive = pathname === item.href;
@@ -99,7 +101,7 @@ export function Sidebar() {
             {/* Overlay for mobile */}
             {isOpen && (
                 <div
-                    className="fixed inset-0 z-30 bg-black/50 md:hidden"
+                    className="fixed inset-0 z-30 bg-black/50 md:hidden backdrop-blur-sm"
                     onClick={() => setIsOpen(false)}
                 />
             )}
