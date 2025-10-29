@@ -5,6 +5,7 @@ A comprehensive budget management application built with Vite, React, TypeScript
 ## ✨ Features
 
 ### Core Features
+
 - 📊 **Interactive Dashboard**: Visualize income vs expenses with beautiful charts
 - 💰 **Income & Expense Tracking**: Add, edit, and delete transactions with ease
 - 🏷️ **Category Management**: Organize transactions by custom color-coded categories
@@ -18,6 +19,7 @@ A comprehensive budget management application built with Vite, React, TypeScript
 - 🔐 **Authentication**: Secure user authentication with Supabase
 
 ### New in v1.0.0
+
 - 🎨 **Dark/Light Mode**: Full theme support with system preference detection
 - 📱 **Mobile-First Design**: Fully responsive design optimized for all devices
 - ♿ **Accessibility**: WCAG AA compliant with keyboard navigation support
@@ -28,6 +30,7 @@ A comprehensive budget management application built with Vite, React, TypeScript
 ## 🎨 Theme Support
 
 Switch between Light, Dark, and System themes:
+
 - **Light Mode**: Clean, bright interface for daytime use
 - **Dark Mode**: Eye-friendly dark theme for low-light environments  
 - **System Mode**: Automatically matches your OS preference
@@ -36,6 +39,7 @@ Switch between Light, Dark, and System themes:
 ## 📱 Responsive Design
 
 Works perfectly on all devices:
+
 - **Mobile**: Collapsible sidebar with hamburger menu (< 768px)
 - **Tablet**: Optimized layout for medium screens (768px - 1024px)
 - **Desktop**: Full-featured interface with fixed sidebar (> 1024px)
