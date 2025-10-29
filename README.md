@@ -35,6 +35,14 @@ A comprehensive budget management application built with Next.js, Tailwind CSS, 
 - Node.js 18+ and npm
 - A Supabase account ([sign up here](https://supabase.com))
 
+### Quick Start
+
+For detailed setup instructions, see our documentation:
+
+- 📚 **[Complete Documentation](./docs/)** - All guides and documentation
+- 🚀 **[Quick Start Guide](./docs/guides/QUICK_START.md)** - Get started in minutes
+- 🗄️ **[Database Setup](./docs/database/)** - Database migration guide
+
 ### Installation
 
 1. **Clone the repository**:
@@ -67,7 +75,7 @@ A comprehensive budget management application built with Next.js, Tailwind CSS, 
    - Go to Supabase Dashboard → SQL Editor → New Query
    - Copy and paste the entire contents of `src/lib/supabase/schema.sql`
    - Click "Run" to create all tables, indexes, policies, and functions
-   - See [DATABASE_SETUP.md](./DATABASE_SETUP.md) for quick reference or [MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md) for detailed instructions
+   - See [docs/database/](./docs/database/) for complete database documentation
 
 6. **Run the development server**:
 
@@ -93,7 +101,7 @@ The application uses the following tables:
 
 All tables include Row Level Security (RLS) policies to ensure data privacy and multi-user support.
 
-For complete database setup instructions, see [DATABASE_SETUP.md](./DATABASE_SETUP.md)
+For complete database setup instructions, see [docs/database/](./docs/database/)
 
 ## Project Structure
 
@@ -164,6 +172,18 @@ budget_manager/
 2. Import your repository in [Vercel](https://vercel.com)
 3. Add environment variables (Supabase URL and key)
 4. Deploy!
+
+For detailed deployment instructions, see [docs/guides/VERCEL_DEPLOYMENT.md](./docs/guides/VERCEL_DEPLOYMENT.md)
+
+## Documentation
+
+📚 **[Complete Documentation](./docs/)** - All project documentation
+
+- **[Quick Start Guide](./docs/guides/QUICK_START.md)** - Get started quickly
+- **[Setup Guide](./docs/guides/SETUP_GUIDE.md)** - Detailed setup instructions
+- **[Database Setup](./docs/database/)** - Database migration and setup
+- **[Features Guide](./docs/guides/FEATURES_LOCATION_GUIDE.md)** - Understand the codebase
+- **[Project Summary](./docs/guides/PROJECT_SUMMARY.md)** - Project overview
 
 ## Contributing
 

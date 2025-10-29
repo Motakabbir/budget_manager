@@ -6,19 +6,22 @@ CURRENT STATE (After Organization):
 
 📁 Project Root
 │
-├── 🎯 QUICK_MIGRATION.md         ← START HERE! Visual quick start (30 sec)
-├── 📖 DATABASE_SETUP.md          ← Quick reference (2 min)
-├── 📚 MIGRATION_GUIDE.md         ← Complete guide with troubleshooting
-├── 📊 SQL_ORGANIZATION_SUMMARY.md ← What changed & why
-├── 📑 DOCS_INDEX.md              ← This file! Navigation hub
-│
-├── 🚀 migrate.sh                 ← Optional: Interactive helper script
-│
-├── ⚠️  migration_add_budgets.sql     ← DEPRECATED (kept for reference)
-├── ⚠️  migration_add_recurring.sql   ← DEPRECATED (kept for reference)
-│
-└── 📁 src/lib/supabase/
-    └── ✅ schema.sql             ← THE MAIN FILE - Execute this!
+└── 📁 docs/database/               ← ALL DOCUMENTATION HERE
+    ├── 📋 README.md                ← Documentation index
+    ├── 🎯 QUICK_MIGRATION.md       ← START HERE! Visual quick start (30 sec)
+    ├── 📖 DATABASE_SETUP.md        ← Quick reference (2 min)
+    ├── 📚 MIGRATION_GUIDE.md       ← Complete guide with troubleshooting
+    ├── 📊 SQL_ORGANIZATION_SUMMARY.md ← What changed & why
+    ├── 📑 DOCS_INDEX.md            ← Navigation hub
+    ├── 📄 SQL_FILES_STRUCTURE.txt  ← This file!
+    │
+    ├── 🚀 migrate.sh               ← Optional: Interactive helper script
+    │
+    ├── ⚠️  migration_add_budgets.sql     ← DEPRECATED (kept for reference)
+    └── ⚠️  migration_add_recurring.sql   ← DEPRECATED (kept for reference)
+
+📁 src/lib/supabase/
+└── ✅ schema.sql                   ← THE MAIN FILE - Execute this!
 
 
 RECOMMENDED WORKFLOW:
@@ -33,7 +36,7 @@ For First-Time Users:
 │     └─> Get step-by-step            │
 │                                     │
 │  3. Copy schema.sql content         │  (30 seconds)
-│     └─> src/lib/supabase/schema.sql │
+│     └─> ../../src/lib/supabase/schema.sql │
 │                                     │
 │  4. Paste in Supabase SQL Editor    │  (30 seconds)
 │     └─> Run the query               │
@@ -61,7 +64,7 @@ For Advanced Users:
 THE MAIN FILE STRUCTURE (schema.sql):
 ======================================
 
-src/lib/supabase/schema.sql
+../../src/lib/supabase/schema.sql
 │
 ├── 📋 Header & Documentation
 │   └─> Complete description
@@ -181,13 +184,16 @@ QUICK ANSWERS:
 ==============
 
 Q: Which file should I execute?
-A: src/lib/supabase/schema.sql
+A: ../../src/lib/supabase/schema.sql
 
 Q: Do I need to run multiple files?
 A: No! Just schema.sql
 
 Q: What about the migration_*.sql files?
 A: Those are deprecated. Everything is in schema.sql now.
+
+Q: Where are all the documentation files?
+A: In docs/database/ folder for better organization
 
 Q: Which documentation should I read first?
 A: Start with QUICK_MIGRATION.md (30 seconds)
@@ -220,8 +226,9 @@ VERSION HISTORY:
 v1.0 - Initial separate migration files
 v1.1 - Added budget feature (separate file)
 v1.2 - Added recurring transactions (separate file)
-v2.0 - Consolidated everything into schema.sql ✅ CURRENT
+v2.0 - Consolidated everything into schema.sql
+v2.1 - Organized all docs into docs/database/ folder ✅ CURRENT
 
 
 Last Updated: October 29, 2025
-Documentation Version: 2.0
+Documentation Version: 2.1

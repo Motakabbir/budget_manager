@@ -26,7 +26,7 @@ src/lib/supabase/schema.sql      ← Run this ONE file!
 
 ### Copy → Paste → Run
 
-1. **Open** `src/lib/supabase/schema.sql`
+1. **Open** `../../src/lib/supabase/schema.sql`
 2. **Copy** all the content (Ctrl+A, Ctrl+C)
 3. **Go to** Supabase Dashboard → SQL Editor
 4. **Paste** and click **Run**
