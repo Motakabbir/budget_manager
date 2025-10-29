@@ -211,6 +211,135 @@ export type Database = {
                     }
                 ]
             }
+            recurring_transactions: {
+                Row: {
+                    id: string
+                    user_id: string
+                    category_id: string
+                    amount: number
+                    description: string | null
+                    frequency: 'daily' | 'weekly' | 'monthly' | 'yearly'
+                    next_date: string
+                    type: 'income' | 'expense'
+                    created_at: string
+                    updated_at: string
+                }
+                Insert: {
+                    id?: string
+                    user_id: string
+                    category_id: string
+                    amount: number
+                    description?: string | null
+                    frequency: 'daily' | 'weekly' | 'monthly' | 'yearly'
+                    next_date: string
+                    type: 'income' | 'expense'
+                    created_at?: string
+                    updated_at?: string
+                }
+                Update: {
+                    id?: string
+                    user_id?: string
+                    category_id?: string
+                    amount?: number
+                    description?: string | null
+                    frequency?: 'daily' | 'weekly' | 'monthly' | 'yearly'
+                    next_date?: string
+                    type?: 'income' | 'expense'
+                    created_at?: string
+                    updated_at?: string
+                }
+                Relationships: []
+            }
+            notifications: {
+                Row: {
+                    id: string
+                    user_id: string
+                    type: string
+                    title: string
+                    message: string
+                    icon: string | null
+                    priority: string
+                    is_read: boolean
+                    action_url: string | null
+                    metadata: Json | null
+                    created_at: string
+                    read_at: string | null
+                    expires_at: string | null
+                }
+                Insert: {
+                    id?: string
+                    user_id: string
+                    type: string
+                    title: string
+                    message: string
+                    icon?: string | null
+                    priority?: string
+                    is_read?: boolean
+                    action_url?: string | null
+                    metadata?: Json | null
+                    created_at?: string
+                    read_at?: string | null
+                    expires_at?: string | null
+                }
+                Update: {
+                    id?: string
+                    user_id?: string
+                    type?: string
+                    title?: string
+                    message?: string
+                    icon?: string | null
+                    priority?: string
+                    is_read?: boolean
+                    action_url?: string | null
+                    metadata?: Json | null
+                    created_at?: string
+                    read_at?: string | null
+                    expires_at?: string | null
+                }
+                Relationships: []
+            }
+            notification_preferences: {
+                Row: {
+                    id: string
+                    user_id: string
+                    budget_alerts: boolean
+                    goal_milestones: boolean
+                    spending_insights: boolean
+                    daily_tips: boolean
+                    weekly_summary: boolean
+                    email_notifications: boolean
+                    push_notifications: boolean
+                    created_at: string
+                    updated_at: string
+                }
+                Insert: {
+                    id?: string
+                    user_id: string
+                    budget_alerts?: boolean
+                    goal_milestones?: boolean
+                    spending_insights?: boolean
+                    daily_tips?: boolean
+                    weekly_summary?: boolean
+                    email_notifications?: boolean
+                    push_notifications?: boolean
+                    created_at?: string
+                    updated_at?: string
+                }
+                Update: {
+                    id?: string
+                    user_id?: string
+                    budget_alerts?: boolean
+                    goal_milestones?: boolean
+                    spending_insights?: boolean
+                    daily_tips?: boolean
+                    weekly_summary?: boolean
+                    email_notifications?: boolean
+                    push_notifications?: boolean
+                    created_at?: string
+                    updated_at?: string
+                }
+                Relationships: []
+            }
         }
         Views: {
             [_ in never]: never

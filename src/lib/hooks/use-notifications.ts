@@ -37,6 +37,8 @@ export interface NotificationPreferences {
     spending_insights: boolean;
     daily_tips: boolean;
     weekly_summary: boolean;
+    email_notifications: boolean;
+    push_notifications: boolean;
     created_at: string;
     updated_at: string;
 }
@@ -185,6 +187,8 @@ export function useNotificationPreferences() {
                             spending_insights: true,
                             daily_tips: false,
                             weekly_summary: true,
+                            email_notifications: false,
+                            push_notifications: false,
                         })
                         .select()
                         .single();
@@ -227,3 +231,7 @@ export function useUpdateNotificationPreferences() {
         },
     });
 }
+
+// Aliases for convenience
+export const useMarkAllAsRead = useMarkAllNotificationsAsRead;
+export const useSaveNotificationPreferences = useUpdateNotificationPreferences;

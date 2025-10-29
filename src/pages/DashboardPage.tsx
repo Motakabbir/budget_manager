@@ -13,6 +13,7 @@ import {
     useSavingsGoals
 } from '@/lib/hooks/use-budget-queries';
 import { DashboardSkeleton } from '@/components/loading/LoadingSkeletons';
+import { NotificationStatusWidget } from '@/components/dashboard/NotificationStatusWidget';
 import {
     BarChart,
     Bar,
@@ -2719,8 +2720,10 @@ export default function DashboardPage() {
                 </Card>
             </div>
 
-            {/* Savings Analytics Cards */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {/* Notification Status Widget & Savings Analytics Cards */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <NotificationStatusWidget />
+
                 <Card className="overflow-hidden border-2 shadow-lg hover:shadow-xl transition-shadow duration-300">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-linear-to-br from-green-50 to-teal-50 dark:from-green-950/20 dark:to-teal-950/20">
                         <CardTitle className="text-sm font-medium">Total Savings (12 months)</CardTitle>

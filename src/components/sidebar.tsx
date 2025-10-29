@@ -5,6 +5,7 @@ import {
     Tag,
     TrendingUp,
     TrendingDown,
+    Bell,
     Settings,
     LogOut,
     X,
@@ -18,6 +19,7 @@ const navigation = [
     { name: 'Categories', href: '/categories', icon: Tag },
     { name: 'Income', href: '/income', icon: TrendingUp },
     { name: 'Expenses', href: '/expenses', icon: TrendingDown },
+    { name: 'Notifications', href: '/notifications', icon: Bell },
     { name: 'Settings', href: '/settings', icon: Settings },
 ];
 

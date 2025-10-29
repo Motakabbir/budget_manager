@@ -10,6 +10,7 @@ import IncomePage from '@/pages/IncomePage';
 import ExpensesPage from '@/pages/ExpensesPage';
 import CategoriesPage from '@/pages/CategoriesPage';
 import SettingsPage from '@/pages/SettingsPage';
+import NotificationsPage from '@/pages/NotificationsPage';
 
 function App() {
     const navigate = useNavigate();
@@ -45,6 +46,7 @@ function App() {
                 <Route path="income" element={<IncomePage />} />
                 <Route path="expenses" element={<ExpensesPage />} />
                 <Route path="categories" element={<CategoriesPage />} />
+                <Route path="notifications" element={<NotificationsPage />} />
                 <Route path="settings" element={<SettingsPage />} />
             </Route>
         </Routes>

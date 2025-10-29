@@ -68,6 +68,8 @@ CREATE TABLE IF NOT EXISTS notification_preferences (
     spending_insights BOOLEAN DEFAULT true,
     daily_tips BOOLEAN DEFAULT false,
     weekly_summary BOOLEAN DEFAULT true,
+    email_notifications BOOLEAN DEFAULT false,
+    push_notifications BOOLEAN DEFAULT false,
     created_at TIMESTAMP
     WITH
         TIME ZONE DEFAULT NOW(),

@@ -33,6 +33,7 @@ import { Progress } from '@/components/ui/progress';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DataManagementCard } from '@/components/settings/DataManagementCard';
+import { NotificationSettings } from '@/components/settings/NotificationSettings';
 
 type Category = {
     id: string;
@@ -656,6 +657,9 @@ export default function SettingsPage() {
                     )}
                 </CardContent>
             </Card>
+
+            {/* Notification Preferences */}
+            <NotificationSettings />
         </div>
     );
 }
