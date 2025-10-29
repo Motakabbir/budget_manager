@@ -1,6 +1,7 @@
-import { Menu, Bell, Search } from 'lucide-react';
+import { Menu, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { NotificationPanel } from '@/components/notifications/notification-panel';
 import { cn } from '@/lib/utils';
 import { useLocation } from 'react-router-dom';
 
@@ -73,15 +74,7 @@ export function TopBar({ onMenuClick, className }: TopBarProps) {
                     </Button>
 
                     {/* Notifications */}
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="relative hover:bg-accent"
-                    >
-                        <Bell className="h-5 w-5" />
-                        <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-card animate-pulse" />
-                        <span className="sr-only">Notifications</span>
-                    </Button>
+                    <NotificationPanel />
 
                     {/* Theme toggle */}
                     <ThemeToggle />
