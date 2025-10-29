@@ -14,6 +14,11 @@ import {
     type Transaction,
     type Category,
 } from '@/lib/hooks/use-budget-queries';
+import { useDashboardAnalytics } from '@/lib/hooks/useDashboardAnalytics';
+import { useCategoryAnalytics } from '@/lib/hooks/useCategoryAnalytics';
+import { useFinancialMetrics } from '@/lib/hooks/useFinancialMetrics';
+import { useSpendingAlerts } from '@/lib/hooks/useSpendingAlerts';
+import { useFilteredTransactions } from '@/lib/hooks/useFilteredTransactions';
 import { DashboardSkeleton } from '@/components/loading/LoadingSkeletons';
 import { NotificationStatusWidget } from '@/components/dashboard/NotificationStatusWidget';
 import {
@@ -55,6 +60,14 @@ export default function DashboardPage() {
         from: Date | undefined;
         to: Date | undefined;
     }>({ from: undefined, to: undefined });
+
+    // TODO (Performance Optimization): These memoized hooks are available for use.
+    // Future refactoring can replace the inline calculations below with these hooks to improve performance.
+    // const dashboardAnalytics = useDashboardAnalytics(transactions, categories);
+    // const categoryAnalytics = useCategoryAnalytics(transactions, categories, timePeriod, customDateRange);
+    // const financialMetrics = useFinancialMetrics(transactions, userSettings?.opening_balance || 0, timePeriod, customDateRange);
+    // const spendingAlerts = useSpendingAlerts(transactions, categories, categoryBudgets, userSettings?.opening_balance || 0, timePeriod, customDateRange);
+    // const filteredTransactions = useFilteredTransactions(transactions, timePeriod, customDateRange);
 
     // Filter transactions based on time period
     const getFilteredTransactions = () => {
