@@ -1,3 +1,11 @@
+-- ============================================================================
+-- DEPRECATED: This migration has been consolidated into schema.sql
+-- ============================================================================
+-- This file is kept for historical reference only.
+-- To set up the complete database, use: src/lib/supabase/schema.sql
+-- See MIGRATION_GUIDE.md for detailed instructions.
+-- ============================================================================
+
 -- Create recurring_transactions table
 CREATE TABLE IF NOT EXISTS recurring_transactions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid (),

@@ -63,10 +63,11 @@ A comprehensive budget management application built with Next.js, Tailwind CSS, 
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
    ```
 
-5. **Set up database**:
-   - Go to Supabase SQL Editor
-   - Run the SQL script from `lib/supabase/schema.sql`
-   - This creates all necessary tables and policies
+5. **Set up database** (One-Command Migration):
+   - Go to Supabase Dashboard → SQL Editor → New Query
+   - Copy and paste the entire contents of `src/lib/supabase/schema.sql`
+   - Click "Run" to create all tables, indexes, policies, and functions
+   - See [DATABASE_SETUP.md](./DATABASE_SETUP.md) for quick reference or [MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md) for detailed instructions
 
 6. **Run the development server**:
 
@@ -83,12 +84,16 @@ A comprehensive budget management application built with Next.js, Tailwind CSS, 
 
 The application uses the following tables:
 
-- **profiles**: User profile information
-- **categories**: Income and expense categories
-- **transactions**: Financial transactions
-- **savings_goals**: User-defined savings targets
+- **categories**: Income and expense categories with color-coding
+- **transactions**: All financial transactions (income/expenses)
+- **savings_goals**: User-defined savings targets with progress tracking
+- **user_settings**: User preferences and opening balance
+- **category_budgets**: Budget limits per category (monthly/yearly)
+- **recurring_transactions**: Templates for recurring transactions
 
-All tables include Row Level Security (RLS) policies to ensure data privacy.
+All tables include Row Level Security (RLS) policies to ensure data privacy and multi-user support.
+
+For complete database setup instructions, see [DATABASE_SETUP.md](./DATABASE_SETUP.md)
 
 ## Project Structure
 

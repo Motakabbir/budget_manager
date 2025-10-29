@@ -1,3 +1,11 @@
+-- ============================================================================
+-- DEPRECATED: This migration has been consolidated into schema.sql
+-- ============================================================================
+-- This file is kept for historical reference only.
+-- To set up the complete database, use: src/lib/supabase/schema.sql
+-- See MIGRATION_GUIDE.md for detailed instructions.
+-- ============================================================================
+
 -- Add category_budgets table for Budget vs Actual feature
 -- Run this in Supabase SQL Editor
 
