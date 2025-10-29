@@ -14,6 +14,7 @@ This is the first stable release of Budget Manager - a comprehensive budget mana
 ### Features
 
 #### Core Functionality
+
 - **Dashboard** - Comprehensive financial overview with interactive visualizations
   - Total balance, income, and expense summaries
   - Income vs Expenses bar charts (6-month view)
@@ -62,6 +63,7 @@ This is the first stable release of Budget Manager - a comprehensive budget mana
   - User preferences
 
 #### Technical Features
+
 - **Authentication** - Secure user authentication with Supabase
 - **Multi-user Support** - Row Level Security (RLS) policies for data privacy
 - **Responsive Design** - Mobile-friendly interface
@@ -70,6 +72,7 @@ This is the first stable release of Budget Manager - a comprehensive budget mana
 - **Progressive Web App** - PWA support for offline functionality
 
 #### Tech Stack
+
 - **Frontend**: Vite, React 19, TypeScript
 - **Styling**: Tailwind CSS 4
 - **UI Components**: shadcn/ui (Radix UI)
@@ -82,6 +85,7 @@ This is the first stable release of Budget Manager - a comprehensive budget mana
 - **Form Validation**: Zod
 
 ### Database Schema
+
 - `categories` - Income and expense categories
 - `transactions` - Financial transactions
 - `savings_goals` - User-defined savings targets
@@ -90,6 +94,7 @@ This is the first stable release of Budget Manager - a comprehensive budget mana
 - `recurring_transactions` - Templates for recurring transactions
 
 ### Documentation
+
 - Comprehensive setup guides
 - Database migration documentation
 - Quick start guide
@@ -98,6 +103,7 @@ This is the first stable release of Budget Manager - a comprehensive budget mana
 - Project summary and architecture
 
 ### Security
+
 - Row Level Security (RLS) on all tables
 - Secure authentication with Supabase
 - Environment variable configuration
@@ -105,4 +111,4 @@ This is the first stable release of Budget Manager - a comprehensive budget mana
 
 ---
 
-**Full Changelog**: https://github.com/Motakabbir/budget_manager/commits/v1.0.0
+**Full Changelog**: <https://github.com/Motakabbir/budget_manager/commits/v1.0.0>
