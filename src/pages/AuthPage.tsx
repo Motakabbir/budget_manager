@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/lib/supabase/client';
 import { Wallet } from 'lucide-react';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export default function AuthPage() {
     const navigate = useNavigate();
@@ -56,12 +57,17 @@ export default function AuthPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 to-indigo-100 p-4">
+        <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4 relative">
+            {/* Theme Toggle in top-right corner */}
+            <div className="absolute top-4 right-4 z-10">
+                <ThemeToggle />
+            </div>
+
             <div className="w-full max-w-md">
                 <div className="text-center mb-8">
                     <div className="flex items-center justify-center gap-2 mb-4">
                         <Wallet className="h-12 w-12 text-primary" />
-                        <h1 className="text-4xl font-bold">Budget Manager</h1>
+                        <h1 className="text-4xl font-bold text-foreground">Budget Manager</h1>
                     </div>
                     <p className="text-muted-foreground">
                         Track your finances with ease
