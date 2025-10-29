@@ -1,16 +1,19 @@
-import { useEffect } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase/client';
+import { DashboardSkeleton } from '@/components/loading/LoadingSkeletons';
 
-// Pages
+// Eager load auth and layout (needed immediately)
 import AuthPage from '@/pages/AuthPage';
 import DashboardLayout from '@/pages/DashboardLayout';
-import DashboardPage from '@/pages/DashboardPage';
-import IncomePage from '@/pages/IncomePage';
-import ExpensesPage from '@/pages/ExpensesPage';
-import CategoriesPage from '@/pages/CategoriesPage';
-import SettingsPage from '@/pages/SettingsPage';
-import NotificationsPage from '@/pages/NotificationsPage';
+
+// Lazy load pages (loaded on demand)
+const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
+const IncomePage = lazy(() => import('@/pages/IncomePage'));
+const ExpensesPage = lazy(() => import('@/pages/ExpensesPage'));
+const CategoriesPage = lazy(() => import('@/pages/CategoriesPage'));
+const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
+const NotificationsPage = lazy(() => import('@/pages/NotificationsPage'));
 
 function App() {
     const navigate = useNavigate();
@@ -42,12 +45,54 @@ function App() {
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/" element={<DashboardLayout />}>
-                <Route path="dashboard" element={<DashboardPage />} />
-                <Route path="income" element={<IncomePage />} />
-                <Route path="expenses" element={<ExpensesPage />} />
-                <Route path="categories" element={<CategoriesPage />} />
-                <Route path="notifications" element={<NotificationsPage />} />
-                <Route path="settings" element={<SettingsPage />} />
+                <Route
+                    path="dashboard"
+                    element={
+                        <Suspense fallback={<DashboardSkeleton />}>
+                            <DashboardPage />
+                        </Suspense>
+                    }
+                />
+                <Route
+                    path="income"
+                    element={
+                        <Suspense fallback={<DashboardSkeleton />}>
+                            <IncomePage />
+                        </Suspense>
+                    }
+                />
+                <Route
+                    path="expenses"
+                    element={
+                        <Suspense fallback={<DashboardSkeleton />}>
+                            <ExpensesPage />
+                        </Suspense>
+                    }
+                />
+                <Route
+                    path="categories"
+                    element={
+                        <Suspense fallback={<DashboardSkeleton />}>
+                            <CategoriesPage />
+                        </Suspense>
+                    }
+                />
+                <Route
+                    path="notifications"
+                    element={
+                        <Suspense fallback={<DashboardSkeleton />}>
+                            <NotificationsPage />
+                        </Suspense>
+                    }
+                />
+                <Route
+                    path="settings"
+                    element={
+                        <Suspense fallback={<DashboardSkeleton />}>
+                            <SettingsPage />
+                        </Suspense>
+                    }
+                />
             </Route>
         </Routes>
     );

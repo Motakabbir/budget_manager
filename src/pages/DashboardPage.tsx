@@ -20,7 +20,13 @@ import { useFinancialMetrics } from '@/lib/hooks/useFinancialMetrics';
 import { useSpendingAlerts } from '@/lib/hooks/useSpendingAlerts';
 import { useFilteredTransactions } from '@/lib/hooks/useFilteredTransactions';
 import { DashboardSkeleton } from '@/components/loading/LoadingSkeletons';
-import { NotificationStatusWidget } from '@/components/dashboard/NotificationStatusWidget';
+import {
+    NotificationStatusWidget,
+    TimePeriodFilter,
+    QuickStatsCards,
+    SpendingAlertsCard,
+    MonthlyBreakdownCards
+} from '@/components/dashboard';
 import {
     BarChart,
     Bar,
@@ -2110,84 +2116,13 @@ export default function DashboardPage() {
             </div>
 
             {/* Time Period Filter */}
-            <Card className="shadow-lg">
-                <CardContent className="pt-6">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                        <div className="flex items-center gap-2">
-                            <Calendar className="h-5 w-5 text-muted-foreground" />
-                            <div>
-                                <p className="text-sm font-medium">Time Period</p>
-                                <p className="text-xs text-muted-foreground">{getTimePeriodLabel()}</p>
-                            </div>
-                        </div>
-                        <Tabs value={timePeriod} onValueChange={(value) => setTimePeriod(value as typeof timePeriod)} className="w-full sm:w-auto">
-                            <TabsList className="grid w-full grid-cols-5">
-                                <TabsTrigger value="day">Today</TabsTrigger>
-                                <TabsTrigger value="month">Month</TabsTrigger>
-                                <TabsTrigger value="year">Year</TabsTrigger>
-                                <TabsTrigger value="custom">Custom</TabsTrigger>
-                                <TabsTrigger value="all">All</TabsTrigger>
-                            </TabsList>
-                        </Tabs>
-                    </div>
-                    {timePeriod === 'custom' && (
-                        <div className="mt-4 pt-4 border-t">
-                            <Label className="text-sm font-medium mb-3 block">Select Date Range</Label>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div>
-                                    <Label className="text-xs text-muted-foreground mb-2 block">From Date</Label>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="outline" className="w-full justify-start text-left font-normal">
-                                                <Calendar className="mr-2 h-4 w-4" />
-                                                {customDateRange.from ? format(customDateRange.from, 'PPP') : 'Pick start date'}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
-                                            <CalendarComponent
-                                                mode="single"
-                                                selected={customDateRange.from}
-                                                onSelect={(date) => setCustomDateRange({ ...customDateRange, from: date })}
-                                                initialFocus
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
-                                </div>
-                                <div>
-                                    <Label className="text-xs text-muted-foreground mb-2 block">To Date</Label>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="outline" className="w-full justify-start text-left font-normal">
-                                                <Calendar className="mr-2 h-4 w-4" />
-                                                {customDateRange.to ? format(customDateRange.to, 'PPP') : 'Pick end date'}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
-                                            <CalendarComponent
-                                                mode="single"
-                                                selected={customDateRange.to}
-                                                onSelect={(date) => setCustomDateRange({ ...customDateRange, to: date })}
-                                                disabled={(date) => customDateRange.from ? date < customDateRange.from : false}
-                                                initialFocus
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
-                                </div>
-                            </div>
-                            {customDateRange.from && (
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="mt-3 w-full"
-                                    onClick={() => setCustomDateRange({ from: undefined, to: undefined })}
-                                >
-                                    Clear Date Range
-                                </Button>
-                            )}
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
+            <TimePeriodFilter
+                timePeriod={timePeriod}
+                setTimePeriod={setTimePeriod}
+                customDateRange={customDateRange}
+                setCustomDateRange={setCustomDateRange}
+                periodLabel={getTimePeriodLabel()}
+            />
 
             {/* Financial Health Score - Comprehensive Overview */}
             <Card className="shadow-2xl hover:shadow-3xl transition-shadow duration-300 border-4 border-gradient-to-r from-blue-500 to-purple-500">
@@ -2455,197 +2390,18 @@ export default function DashboardPage() {
             </div>
 
             {/* Spending Alerts */}
-            {spendingAlerts.length > 0 && (
-                <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-2 border-amber-200 dark:border-amber-900">
-                    <CardHeader className="bg-linear-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20">
-                        <div className="flex items-center justify-between">
-                            <CardTitle className="text-lg flex items-center gap-2">
-                                <AlertCircle className="h-5 w-5 text-amber-600" />
-                                Smart Alerts & Insights
-                            </CardTitle>
-                            <div className="flex items-center gap-2">
-                                {criticalAlerts.length > 0 && (
-                                    <span className="px-2 py-1 text-xs rounded-full bg-red-600 text-white font-semibold">
-                                        {criticalAlerts.length} Critical
-                                    </span>
-                                )}
-                                {warningAlerts.length > 0 && (
-                                    <span className="px-2 py-1 text-xs rounded-full bg-orange-600 text-white font-semibold">
-                                        {warningAlerts.length} Warning
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="pt-6">
-                        <div className="space-y-3">
-                            {spendingAlerts.map((alert) => (
-                                <div
-                                    key={alert.id}
-                                    className={`p-4 rounded-lg border-l-4 ${alert.type === 'critical'
-                                        ? 'bg-red-50 dark:bg-red-950/20 border-red-600'
-                                        : alert.type === 'warning'
-                                            ? 'bg-orange-50 dark:bg-orange-950/20 border-orange-600'
-                                            : alert.type === 'success'
-                                                ? 'bg-green-50 dark:bg-green-950/20 border-green-600'
-                                                : 'bg-blue-50 dark:bg-blue-950/20 border-blue-600'
-                                        }`}
-                                >
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div className="flex items-start gap-3 flex-1">
-                                            <span className="text-2xl">{alert.icon}</span>
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <h4 className={`font-semibold text-sm ${alert.type === 'critical'
-                                                        ? 'text-red-900 dark:text-red-100'
-                                                        : alert.type === 'warning'
-                                                            ? 'text-orange-900 dark:text-orange-100'
-                                                            : alert.type === 'success'
-                                                                ? 'text-green-900 dark:text-green-100'
-                                                                : 'text-blue-900 dark:text-blue-100'
-                                                        }`}>
-                                                        {alert.title}
-                                                    </h4>
-                                                    {alert.category && (
-                                                        <div
-                                                            className="w-2 h-2 rounded-full"
-                                                            style={{ backgroundColor: alert.category.color }}
-                                                        />
-                                                    )}
-                                                </div>
-                                                <p className={`text-xs ${alert.type === 'critical'
-                                                    ? 'text-red-700 dark:text-red-300'
-                                                    : alert.type === 'warning'
-                                                        ? 'text-orange-700 dark:text-orange-300'
-                                                        : alert.type === 'success'
-                                                            ? 'text-green-700 dark:text-green-300'
-                                                            : 'text-blue-700 dark:text-blue-300'
-                                                    }`}>
-                                                    {alert.message}
-                                                </p>
-                                                {alert.actionable && (
-                                                    <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-                                                        <span>💡</span>
-                                                        <span className="font-medium">Action Required</span>
-                                                    </p>
-                                                )}
-                                            </div>
-                                        </div>
-                                        {alert.value !== undefined && (
-                                            <div className="text-right">
-                                                <p className={`text-lg font-bold ${alert.type === 'critical'
-                                                    ? 'text-red-600'
-                                                    : alert.type === 'warning'
-                                                        ? 'text-orange-600'
-                                                        : alert.type === 'success'
-                                                            ? 'text-green-600'
-                                                            : 'text-blue-600'
-                                                    }`}>
-                                                    ${alert.value.toFixed(2)}
-                                                </p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Summary Footer */}
-                        <div className="mt-6 pt-4 border-t grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div className="text-center">
-                                <p className="text-2xl font-bold text-red-600">{criticalAlerts.length}</p>
-                                <p className="text-xs text-muted-foreground">Critical</p>
-                            </div>
-                            <div className="text-center">
-                                <p className="text-2xl font-bold text-orange-600">{warningAlerts.length}</p>
-                                <p className="text-xs text-muted-foreground">Warnings</p>
-                            </div>
-                            <div className="text-center">
-                                <p className="text-2xl font-bold text-blue-600">{infoAlerts.length}</p>
-                                <p className="text-xs text-muted-foreground">Info</p>
-                            </div>
-                            <div className="text-center">
-                                <p className="text-2xl font-bold text-green-600">{successAlerts.length}</p>
-                                <p className="text-xs text-muted-foreground">Positive</p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
+            <SpendingAlertsCard
+                spendingAlerts={spendingAlerts}
+                criticalAlerts={criticalAlerts}
+                warningAlerts={warningAlerts}
+                infoAlerts={infoAlerts}
+                successAlerts={successAlerts}
+            />
 
             {/* Month-wise Breakdown Cards (Last 12 Months) */}
-            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
-                <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                        <Calendar className="h-5 w-5" />
-                        Monthly Breakdown (Last 12 Months)
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {monthlyData.map((month, index) => {
-                            const savingsPositive = month.savings >= 0;
-                            return (
-                                <Card key={index} className="overflow-hidden border shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105">
-                                    <CardHeader className="pb-3 bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-                                        <CardTitle className="text-sm font-semibold text-center">
-                                            {month.month}
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="pt-4 space-y-2">
-                                        <div className="flex items-center justify-between text-xs">
-                                            <span className="text-muted-foreground flex items-center gap-1">
-                                                <ArrowUpRight className="h-3 w-3 text-green-600" />
-                                                Income
-                                            </span>
-                                            <span className="font-semibold text-green-600">
-                                                ${month.income.toFixed(2)}
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center justify-between text-xs">
-                                            <span className="text-muted-foreground flex items-center gap-1">
-                                                <ArrowDownRight className="h-3 w-3 text-red-600" />
-                                                Expenses
-                                            </span>
-                                            <span className="font-semibold text-red-600">
-                                                ${month.expenses.toFixed(2)}
-                                            </span>
-                                        </div>
-                                        <div className="pt-2 border-t">
-                                            <div className="flex items-center justify-between text-xs">
-                                                <span className="text-muted-foreground flex items-center gap-1">
-                                                    <PiggyBank className="h-3 w-3" />
-                                                    Savings
-                                                </span>
-                                                <span className={`font-bold ${savingsPositive ? 'text-blue-600' : 'text-red-600'}`}>
-                                                    ${month.savings.toFixed(2)}
-                                                </span>
-                                            </div>
-                                            {month.income > 0 && (
-                                                <div className="mt-2">
-                                                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-                                                        <div
-                                                            className={`h-1.5 rounded-full ${savingsPositive ? 'bg-blue-600' : 'bg-red-600'}`}
-                                                            style={{
-                                                                width: `${Math.min(Math.abs((month.savings / month.income) * 100), 100)}%`,
-                                                            }}
-                                                        />
-                                                    </div>
-                                                    <p className="text-xs text-muted-foreground text-center mt-1">
-                                                        {((month.savings / month.income) * 100).toFixed(0)}% rate
-                                                    </p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            );
-                        })}
-                    </div>
-                </CardContent>
-            </Card>
+            <MonthlyBreakdownCards monthlyData={monthlyData} />
 
-
+            {/* Charts and Analytics Section */}
 
             {/* Summary Cards */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

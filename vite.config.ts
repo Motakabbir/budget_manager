@@ -58,5 +58,28 @@ export default defineConfig({
     build: {
         outDir: 'dist',
         sourcemap: true,
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    // Vendor chunks
+                    'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+                    'query-vendor': ['@tanstack/react-query'],
+                    'charts': ['recharts'],
+                    'date-utils': ['date-fns'],
+                    'supabase': ['@supabase/supabase-js'],
+                    // UI components chunk
+                    'ui-components': [
+                        '@/components/ui/card',
+                        '@/components/ui/button',
+                        '@/components/ui/input',
+                        '@/components/ui/label',
+                        '@/components/ui/select',
+                        '@/components/ui/dialog',
+                        '@/components/ui/table',
+                    ],
+                },
+            },
+        },
+        chunkSizeWarningLimit: 1000, // Increase to 1000kb to reduce warnings for intentionally large chunks
     },
 });
