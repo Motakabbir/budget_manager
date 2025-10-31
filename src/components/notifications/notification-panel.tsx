@@ -93,7 +93,7 @@ export function NotificationPanel() {
                             <DropdownMenuContent align="end">
                                 <DropdownMenuItem onClick={() => {
                                     setOpen(false);
-                                    navigate('/settings?tab=notifications');
+                                    navigate('/settings');
                                 }}>
                                     <Settings className="h-4 w-4 mr-2" />
                                     Notification Settings

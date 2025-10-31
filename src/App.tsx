@@ -2,6 +2,7 @@ import { useEffect, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase/client';
 import { DashboardSkeleton } from '@/components/loading/LoadingSkeletons';
+import { scheduledNotificationProcessor } from '@/lib/services/scheduled-notification-processor';
 
 // Eager load auth and layout (needed immediately)
 import AuthPage from '@/pages/AuthPage';
@@ -24,6 +25,7 @@ const ExpensesPage = lazy(() => import('@/pages/ExpensesPage'));
 const CategoriesPage = lazy(() => import('@/pages/CategoriesPage'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
 const NotificationsPage = lazy(() => import('@/pages/NotificationsPage'));
+const NotificationPreferencesPage = lazy(() => import('@/pages/NotificationPreferencesPage'));
 
 function App() {
     const navigate = useNavigate();
@@ -46,6 +48,11 @@ function App() {
                 navigate('/auth');
             }
         });
+
+        // Initialize scheduled notification processor
+        // This will start processing scheduled notifications in development mode
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const processor = scheduledNotificationProcessor;
 
         return () => subscription.unsubscribe();
     }, [navigate]);
@@ -172,6 +179,14 @@ function App() {
                     element={
                         <Suspense fallback={<DashboardSkeleton />}>
                             <NotificationsPage />
+                        </Suspense>
+                    }
+                />
+                <Route
+                    path="notification-preferences"
+                    element={
+                        <Suspense fallback={<DashboardSkeleton />}>
+                            <NotificationPreferencesPage />
                         </Suspense>
                     }
                 />

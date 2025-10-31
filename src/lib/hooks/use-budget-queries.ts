@@ -10,6 +10,7 @@ import type {
     AddContributionParams,
     GoalAnalytics
 } from '@/lib/supabase/database.types';
+import { UnusualSpendingDetector } from '@/lib/services/unusual-spending-detector';
 
 // ============= TYPES =============
 
@@ -380,6 +381,22 @@ export function useAddTransaction() {
                 .single();
 
             if (error) throw error;
+
+            // Analyze for unusual spending if this is an expense transaction
+            if (input.type === 'expense' && input.amount > 0) {
+                try {
+                    const detector = new UnusualSpendingDetector();
+                    await detector.analyzeTransaction(
+                        user.id,
+                        input.amount,
+                        input.category_id,
+                        data.id
+                    );
+                } catch {
+                    // Silently fail - spending analysis shouldn't block transaction creation
+                }
+            }
+
             return data;
         },
         onSuccess: (_, variables) => {
