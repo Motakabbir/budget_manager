@@ -20,7 +20,7 @@ import {
     Target,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {  useEffect } from 'react';
+import { useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { BudgetAlertBadge } from '@/components/budgets';
 
@@ -35,6 +35,7 @@ const navigation = [
     { name: 'Assets', href: '/assets', icon: Briefcase },
     { name: 'Goals', href: '/goals', icon: Target },
     { name: 'Analytics', href: '/analytics', icon: BarChart3 },
+    { name: 'Reports', href: '/reports', icon: BarChart3 },
     { name: 'Categories', href: '/categories', icon: Tag },
     { name: 'Income', href: '/income', icon: TrendingUp },
     { name: 'Expenses', href: '/expenses', icon: TrendingDown },
