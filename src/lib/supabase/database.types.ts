@@ -852,3 +852,44 @@ export type Database = {
         }
     }
 }
+
+// ============================================================================
+// Enhanced Budget Types with Spending Tracking
+// ============================================================================
+
+export type BudgetPeriod = 'monthly' | 'yearly';
+
+export interface Budget {
+    id: string;
+    user_id: string;
+    category_id: string;
+    amount: number;
+    period: BudgetPeriod;
+    created_at: string;
+    updated_at: string;
+    categories?: {
+        id: string;
+        name: string;
+        type: 'income' | 'expense';
+        color: string;
+        icon?: string | null;
+    };
+}
+
+export interface BudgetWithSpending extends Budget {
+    spent: number;
+    remaining: number;
+    percentage: number;
+    status: 'safe' | 'warning' | 'exceeded';
+}
+
+export interface CreateBudgetParams {
+    category_id: string;
+    amount: number;
+    period: BudgetPeriod;
+}
+
+export interface UpdateBudgetParams {
+    amount?: number;
+    period?: BudgetPeriod;
+}

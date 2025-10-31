@@ -245,6 +245,7 @@ interface BudgetStore {
     updateUserSettings: (updates: Partial<UserSettings>) => Promise<void>;
 
     saveCategoryBudget: (budget: { category_id: string; amount: number; period: 'monthly' | 'yearly' }) => Promise<void>;
+    addCategoryBudget: (budget: CategoryBudget) => Promise<void>;
     updateCategoryBudget: (id: string, updates: Partial<CategoryBudget>) => Promise<void>;
     deleteCategoryBudget: (id: string) => Promise<void>;
 
@@ -571,6 +572,24 @@ export const useBudgetStore = create<BudgetStore>((set, get) => ({
             .from('category_budgets')
             .delete()
             .eq('id', id);
+
+        if (!error) {
+            await get().fetchCategoryBudgets();
+        }
+    },
+
+    addCategoryBudget: async (budget: CategoryBudget) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { error } = await supabase
+            .from('category_budgets')
+            .insert({
+                user_id: user.id,
+                category_id: budget.category_id,
+                amount: budget.amount,
+                period: budget.period,
+            });
 
         if (!error) {
             await get().fetchCategoryBudgets();

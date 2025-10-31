@@ -192,6 +192,25 @@ export type RecurringTransaction = {
     category?: Category | null;
 };
 
+export type Budget = {
+    id: string;
+    user_id: string;
+    category_id: string;
+    amount: number;
+    period: 'monthly' | 'yearly';
+    created_at: string;
+    updated_at: string;
+    category?: Category | null;
+};
+
+export type BudgetWithSpending = Budget & {
+    spent: number;
+    remaining: number;
+    percentage: number;
+    status: 'safe' | 'warning' | 'exceeded';
+};
+
+
 // Query Keys
 export const queryKeys = {
     transactions: (startDate?: string, endDate?: string) => ['transactions', startDate, endDate] as const,
@@ -199,6 +218,7 @@ export const queryKeys = {
     savingsGoals: ['savingsGoals'] as const,
     userSettings: ['userSettings'] as const,
     categoryBudgets: ['categoryBudgets'] as const,
+    budgets: ['budgets'] as const,
     bankAccounts: ['bankAccounts'] as const,
     accountTransfers: ['accountTransfers'] as const,
     paymentCards: ['paymentCards'] as const,
@@ -1411,5 +1431,230 @@ export function useCreateFromRecurring() {
         onError: (error: Error) => {
             toast.error('Failed to create transaction', { description: error.message });
         },
+    });
+}
+
+// ============= BUDGETS =============
+
+export function useBudgets() {
+    return useQuery<Budget[]>({
+        queryKey: queryKeys.budgets,
+        queryFn: async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { data, error } = await supabase
+                .from('category_budgets')
+                .select('*, category:categories(*)')
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+            return data as Budget[];
+        },
+        staleTime: 5 * 60 * 1000, // 5 minutes
+    });
+}
+
+export function useCreateBudget() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (params: { category_id: string; amount: number; period: 'monthly' | 'yearly' }) => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { data, error } = await supabase
+                .from('category_budgets')
+                .insert({
+                    user_id: user.id,
+                    category_id: params.category_id,
+                    amount: params.amount,
+                    period: params.period,
+                })
+                .select('*, category:categories(*)')
+                .single();
+
+            if (error) throw error;
+            return data as Budget;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.budgets });
+            queryClient.invalidateQueries({ queryKey: queryKeys.categoryBudgets });
+            toast.success('Budget created successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to create budget', { description: error.message });
+        },
+    });
+}
+
+export function useUpdateBudget() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ id, updates }: { id: string; updates: { amount?: number; period?: 'monthly' | 'yearly' } }) => {
+            const { data, error } = await supabase
+                .from('category_budgets')
+                .update({ ...updates, updated_at: new Date().toISOString() })
+                .eq('id', id)
+                .select('*, category:categories(*)')
+                .single();
+
+            if (error) throw error;
+            return data as Budget;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.budgets });
+            queryClient.invalidateQueries({ queryKey: queryKeys.categoryBudgets });
+            toast.success('Budget updated successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to update budget', { description: error.message });
+        },
+    });
+}
+
+export function useDeleteBudget() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (id: string) => {
+            const { error } = await supabase
+                .from('category_budgets')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+            return id;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.budgets });
+            queryClient.invalidateQueries({ queryKey: queryKeys.categoryBudgets });
+            toast.success('Budget deleted successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to delete budget', { description: error.message });
+        },
+    });
+}
+
+export function useBudgetSpending(categoryId: string, period: 'monthly' | 'yearly') {
+    return useQuery<{ spent: number; budget: Budget | null }>({
+        queryKey: ['budgetSpending', categoryId, period],
+        queryFn: async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            // Get the budget
+            const { data: budget, error: budgetError } = await supabase
+                .from('category_budgets')
+                .select('*, category:categories(*)')
+                .eq('user_id', user.id)
+                .eq('category_id', categoryId)
+                .eq('period', period)
+                .single();
+
+            if (budgetError && budgetError.code !== 'PGRST116') throw budgetError;
+
+            // Calculate date range based on period
+            const now = new Date();
+            let startDate: string;
+            let endDate: string;
+
+            if (period === 'monthly') {
+                // Current month
+                startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+                endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+            } else {
+                // Current year
+                startDate = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0];
+                endDate = new Date(now.getFullYear(), 11, 31).toISOString().split('T')[0];
+            }
+
+            // Get total spending for this category in the period
+            const { data: transactions, error: transError } = await supabase
+                .from('transactions')
+                .select('amount')
+                .eq('user_id', user.id)
+                .eq('category_id', categoryId)
+                .eq('type', 'expense')
+                .gte('date', startDate)
+                .lte('date', endDate);
+
+            if (transError) throw transError;
+
+            const spent = transactions?.reduce((sum, t) => sum + t.amount, 0) || 0;
+
+            return {
+                spent,
+                budget: budget as Budget | null,
+            };
+        },
+        staleTime: 2 * 60 * 1000, // 2 minutes
+        enabled: !!categoryId,
+    });
+}
+
+export function useBudgetsWithSpending() {
+    const { data: budgets } = useBudgets();
+    const { data: transactions } = useTransactions();
+
+    return useQuery<BudgetWithSpending[]>({
+        queryKey: ['budgetsWithSpending', budgets, transactions],
+        queryFn: async () => {
+            if (!budgets || !transactions) return [];
+
+            const now = new Date();
+
+            return budgets.map((budget) => {
+                // Calculate date range based on period
+                let startDate: Date;
+                let endDate: Date;
+
+                if (budget.period === 'monthly') {
+                    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                    endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                } else {
+                    startDate = new Date(now.getFullYear(), 0, 1);
+                    endDate = new Date(now.getFullYear(), 11, 31);
+                }
+
+                // Calculate spending for this category in the period
+                const spent = transactions
+                    .filter((t) => {
+                        const transDate = new Date(t.date);
+                        return (
+                            t.category_id === budget.category_id &&
+                            t.type === 'expense' &&
+                            transDate >= startDate &&
+                            transDate <= endDate
+                        );
+                    })
+                    .reduce((sum, t) => sum + t.amount, 0);
+
+                const remaining = Math.max(0, budget.amount - spent);
+                const percentage = budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
+
+                let status: 'safe' | 'warning' | 'exceeded';
+                if (percentage >= 100) {
+                    status = 'exceeded';
+                } else if (percentage >= 80) {
+                    status = 'warning';
+                } else {
+                    status = 'safe';
+                }
+
+                return {
+                    ...budget,
+                    spent,
+                    remaining,
+                    percentage,
+                    status,
+                };
+            });
+        },
+        enabled: !!budgets && !!transactions,
+        staleTime: 2 * 60 * 1000, // 2 minutes
     });
 }
