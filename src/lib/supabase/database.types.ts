@@ -893,3 +893,251 @@ export interface UpdateBudgetParams {
     amount?: number;
     period?: BudgetPeriod;
 }
+
+// ============================================================================
+// Investment Types
+// ============================================================================
+
+export type InvestmentType = 
+    | 'stock' 
+    | 'mutual_fund' 
+    | 'bond' 
+    | 'crypto' 
+    | 'fixed_deposit' 
+    | 'gold'
+    | 'etf'
+    | 'reit'
+    | 'commodities'
+    | 'other';
+
+export interface Investment {
+    id: string;
+    user_id: string;
+    investment_type: InvestmentType;
+    name: string;
+    symbol: string | null;
+    quantity: number;
+    purchase_price: number;
+    current_price: number;
+    purchase_date: string;
+    currency: string;
+    platform: string | null;
+    dividend_yield: number | null;
+    last_dividend_date: string | null;
+    total_dividends_received: number;
+    notes: string | null;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface InvestmentWithStats extends Investment {
+    current_value: number;
+    total_invested: number;
+    profit_loss: number;
+    profit_loss_percentage: number;
+    roi_percentage: number;
+    days_held: number;
+}
+
+export interface CreateInvestmentParams {
+    investment_type: InvestmentType;
+    name: string;
+    symbol?: string | null;
+    quantity: number;
+    purchase_price: number;
+    current_price: number;
+    purchase_date: string;
+    currency?: string;
+    platform?: string | null;
+    dividend_yield?: number | null;
+    notes?: string | null;
+}
+
+export interface UpdateInvestmentParams {
+    name?: string;
+    symbol?: string | null;
+    quantity?: number;
+    current_price?: number;
+    platform?: string | null;
+    dividend_yield?: number | null;
+    last_dividend_date?: string | null;
+    total_dividends_received?: number;
+    notes?: string | null;
+    is_active?: boolean;
+}
+
+export interface PortfolioSummary {
+    total_investments: number;
+    total_invested: number;
+    total_current_value: number;
+    total_profit_loss: number;
+    total_profit_loss_percentage: number;
+    total_dividends: number;
+}
+
+export interface InvestmentBreakdown {
+    investment_type: InvestmentType;
+    count: number;
+    total_invested: number;
+    total_current_value: number;
+    profit_loss: number;
+    percentage_of_portfolio: number;
+}
+
+// ============================================================================
+// Asset Types
+// ============================================================================
+
+export type AssetType = 
+    | 'property' 
+    | 'vehicle' 
+    | 'jewelry' 
+    | 'electronics'
+    | 'furniture'
+    | 'collectibles'
+    | 'equipment'
+    | 'other';
+
+export type AssetCondition = 'excellent' | 'good' | 'fair' | 'poor';
+
+export type PropertyType = 'house' | 'apartment' | 'land' | 'commercial';
+
+export interface Asset {
+    id: string;
+    user_id: string;
+    asset_type: AssetType;
+    name: string;
+    brand: string | null;
+    model: string | null;
+    purchase_price: number;
+    purchase_date: string;
+    current_value: number;
+    depreciation_rate: number | null;
+    salvage_value: number | null;
+    useful_life_years: number | null;
+    is_insured: boolean;
+    insurance_provider: string | null;
+    insurance_policy_number: string | null;
+    insurance_expiry_date: string | null;
+    insurance_premium: number | null;
+    serial_number: string | null;
+    purchase_location: string | null;
+    warranty_expiry_date: string | null;
+    property_address: string | null;
+    property_size_sqft: number | null;
+    property_type: string | null;
+    vehicle_make: string | null;
+    vehicle_year: number | null;
+    vehicle_vin: string | null;
+    vehicle_mileage: number | null;
+    vehicle_license_plate: string | null;
+    condition: AssetCondition | null;
+    location: string | null;
+    notes: string | null;
+    is_active: boolean;
+    sale_date: string | null;
+    sale_price: number | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface AssetWithStats extends Asset {
+    total_depreciation: number;
+    depreciation_percentage: number;
+    age_years: number;
+    age_months: number;
+    avg_annual_depreciation: number;
+    sale_profit_loss: number | null;
+    insurance_status: 'active' | 'expired' | 'expiring_soon' | 'not_insured';
+    warranty_status: 'active' | 'expired' | 'expiring_soon' | 'no_warranty';
+}
+
+export interface CreateAssetParams {
+    asset_type: AssetType;
+    name: string;
+    brand?: string | null;
+    model?: string | null;
+    purchase_price: number;
+    purchase_date: string;
+    current_value: number;
+    depreciation_rate?: number | null;
+    salvage_value?: number | null;
+    useful_life_years?: number | null;
+    is_insured?: boolean;
+    insurance_provider?: string | null;
+    insurance_policy_number?: string | null;
+    insurance_expiry_date?: string | null;
+    insurance_premium?: number | null;
+    serial_number?: string | null;
+    purchase_location?: string | null;
+    warranty_expiry_date?: string | null;
+    property_address?: string | null;
+    property_size_sqft?: number | null;
+    property_type?: string | null;
+    vehicle_make?: string | null;
+    vehicle_year?: number | null;
+    vehicle_vin?: string | null;
+    vehicle_mileage?: number | null;
+    vehicle_license_plate?: string | null;
+    condition?: AssetCondition | null;
+    location?: string | null;
+    notes?: string | null;
+}
+
+export interface UpdateAssetParams {
+    name?: string;
+    brand?: string | null;
+    model?: string | null;
+    current_value?: number;
+    depreciation_rate?: number | null;
+    salvage_value?: number | null;
+    useful_life_years?: number | null;
+    is_insured?: boolean;
+    insurance_provider?: string | null;
+    insurance_policy_number?: string | null;
+    insurance_expiry_date?: string | null;
+    insurance_premium?: number | null;
+    warranty_expiry_date?: string | null;
+    vehicle_mileage?: number | null;
+    vehicle_license_plate?: string | null;
+    condition?: AssetCondition | null;
+    location?: string | null;
+    notes?: string | null;
+    is_active?: boolean;
+    sale_date?: string | null;
+    sale_price?: number | null;
+}
+
+export interface AssetsSummary {
+    total_assets: number;
+    total_purchase_price: number;
+    total_current_value: number;
+    total_depreciation: number;
+    total_insured_value: number;
+    assets_insured_count: number;
+}
+
+export interface AssetBreakdown {
+    asset_type: AssetType;
+    count: number;
+    total_purchase_price: number;
+    total_current_value: number;
+    total_depreciation: number;
+    percentage_of_total: number;
+}
+
+export interface AssetDepreciation {
+    current_book_value: number;
+    accumulated_depreciation: number;
+    remaining_useful_life_years: number | null;
+}
+
+export interface ExpiringCoverage {
+    asset_id: string;
+    asset_name: string;
+    asset_type: AssetType;
+    coverage_type: 'insurance' | 'warranty';
+    expiry_date: string;
+    days_until_expiry: number;
+}

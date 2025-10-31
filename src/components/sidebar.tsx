@@ -14,6 +14,9 @@ import {
     HandCoins,
     RefreshCw,
     PieChart,
+    Wallet,
+    Briefcase,
+    BarChart3,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
@@ -27,6 +30,9 @@ const navigation = [
     { name: 'Loans', href: '/loans', icon: HandCoins },
     { name: 'Recurring', href: '/recurring', icon: RefreshCw },
     { name: 'Budgets', href: '/budgets', icon: PieChart },
+    { name: 'Investments', href: '/investments', icon: Wallet },
+    { name: 'Assets', href: '/assets', icon: Briefcase },
+    { name: 'Analytics', href: '/analytics', icon: BarChart3 },
     { name: 'Categories', href: '/categories', icon: Tag },
     { name: 'Income', href: '/income', icon: TrendingUp },
     { name: 'Expenses', href: '/expenses', icon: TrendingDown },

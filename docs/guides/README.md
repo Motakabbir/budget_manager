@@ -20,6 +20,12 @@ This folder contains all project-related guides, setup instructions, and documen
 | **[NEW_FEATURES_GUIDE.md](./NEW_FEATURES_GUIDE.md)** | Guide for new features |
 | **[FEATURES_LOCATION_GUIDE.md](./FEATURES_LOCATION_GUIDE.md)** | Where to find features in the codebase |
 
+### Module Documentation (Phase Implementations)
+
+| Module | User Guide | Technical Docs | Quick Start | Summary |
+|--------|-----------|----------------|-------------|---------|
+| **Budgets** | [BUDGETS_USER_GUIDE.md](./BUDGETS_USER_GUIDE.md) | [BUDGETS_TECHNICAL.md](./BUDGETS_TECHNICAL.md) | [BUDGETS_QUICK_START.md](./BUDGETS_QUICK_START.md) | [PHASE_5_SUMMARY.md](./PHASE_5_SUMMARY.md) |
+
 ### Project Information
 
 | File | Description |
@@ -59,6 +65,8 @@ docs/
 - **Get started quickly** → [QUICK_START.md](./QUICK_START.md)
 - **Deploy to Vercel** → [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md)
 - **Understand the features** → [FEATURES_LOCATION_GUIDE.md](./FEATURES_LOCATION_GUIDE.md)
+- **Set up budgets tracking** → [BUDGETS_QUICK_START.md](./BUDGETS_QUICK_START.md)
+- **Learn about budgets** → [BUDGETS_USER_GUIDE.md](./BUDGETS_USER_GUIDE.md)
 - **See project overview** → [PROJECT_SUMMARY.md](./PROJECT_SUMMARY.md)
 - **Set up database** → [../database/README.md](../database/README.md)
 

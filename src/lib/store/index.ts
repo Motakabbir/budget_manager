@@ -1,5 +1,13 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase/client';
+import type { 
+    Investment, 
+    Asset, 
+    CreateInvestmentParams, 
+    CreateAssetParams, 
+    UpdateInvestmentParams, 
+    UpdateAssetParams 
+} from '@/lib/supabase/database.types';
 
 interface Category {
     id: string;
@@ -200,6 +208,8 @@ interface BudgetStore {
     loanPayments: LoanPayment[];
     recurringTransactions: RecurringTransaction[];
     categoryBudgets: CategoryBudget[];
+    investments: Investment[];
+    assets: Asset[];
     isLoading: boolean;
 
     setUser: (user: User | null) => void;
@@ -215,6 +225,8 @@ interface BudgetStore {
     setLoans: (loans: Loan[]) => void;
     setLoanPayments: (payments: LoanPayment[]) => void;
     setRecurringTransactions: (recurring: RecurringTransaction[]) => void;
+    setInvestments: (investments: Investment[]) => void;
+    setAssets: (assets: Asset[]) => void;
     setLoading: (loading: boolean) => void;
 
     fetchCategories: () => Promise<void>;
@@ -277,6 +289,16 @@ interface BudgetStore {
     deleteRecurringTransaction: (id: string) => Promise<void>;
     toggleRecurringTransaction: (id: string, isActive: boolean) => Promise<void>;
     createFromRecurring: (recurringId: string) => Promise<void>;
+
+    fetchInvestments: () => Promise<void>;
+    addInvestment: (investment: CreateInvestmentParams) => Promise<void>;
+    updateInvestment: (id: string, updates: UpdateInvestmentParams) => Promise<void>;
+    deleteInvestment: (id: string) => Promise<void>;
+
+    fetchAssets: () => Promise<void>;
+    addAsset: (asset: CreateAssetParams) => Promise<void>;
+    updateAsset: (id: string, updates: UpdateAssetParams) => Promise<void>;
+    deleteAsset: (id: string) => Promise<void>;
 }
 
 export const useBudgetStore = create<BudgetStore>((set, get) => ({
@@ -293,6 +315,8 @@ export const useBudgetStore = create<BudgetStore>((set, get) => ({
     loans: [],
     loanPayments: [],
     recurringTransactions: [],
+    investments: [],
+    assets: [],
     isLoading: false,
 
     setUser: (user) => set({ user }),
@@ -308,6 +332,8 @@ export const useBudgetStore = create<BudgetStore>((set, get) => ({
     setLoans: (loans) => set({ loans }),
     setLoanPayments: (payments) => set({ loanPayments: payments }),
     setRecurringTransactions: (recurring) => set({ recurringTransactions: recurring }),
+    setInvestments: (investments) => set({ investments }),
+    setAssets: (assets) => set({ assets }),
     setLoading: (loading) => set({ isLoading: loading }),
 
     fetchCategories: async () => {
@@ -1041,6 +1067,126 @@ export const useBudgetStore = create<BudgetStore>((set, get) => ({
         if (!error) {
             await get().fetchRecurringTransactions();
             await get().fetchTransactions();
+        }
+    },
+
+    // ========================================
+    // INVESTMENTS METHODS
+    // ========================================
+
+    fetchInvestments: async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data, error } = await (supabase as any)
+            .from('investments')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
+
+        if (!error && data) {
+            set({ investments: data as Investment[] });
+        }
+    },
+
+    addInvestment: async (investment) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { error } = await (supabase as any)
+            .from('investments')
+            .insert({
+                user_id: user.id,
+                ...investment,
+            });
+
+        if (!error) {
+            await get().fetchInvestments();
+        }
+    },
+
+    updateInvestment: async (id, updates) => {
+        const { error } = await (supabase as any)
+            .from('investments')
+            .update({
+                ...updates,
+                updated_at: new Date().toISOString(),
+            })
+            .eq('id', id);
+
+        if (!error) {
+            await get().fetchInvestments();
+        }
+    },
+
+    deleteInvestment: async (id) => {
+        const { error } = await (supabase as any)
+            .from('investments')
+            .delete()
+            .eq('id', id);
+
+        if (!error) {
+            await get().fetchInvestments();
+        }
+    },
+
+    // ========================================
+    // ASSETS METHODS
+    // ========================================
+
+    fetchAssets: async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data, error } = await (supabase as any)
+            .from('assets')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
+
+        if (!error && data) {
+            set({ assets: data as Asset[] });
+        }
+    },
+
+    addAsset: async (asset) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { error } = await (supabase as any)
+            .from('assets')
+            .insert({
+                user_id: user.id,
+                ...asset,
+            });
+
+        if (!error) {
+            await get().fetchAssets();
+        }
+    },
+
+    updateAsset: async (id, updates) => {
+        const { error } = await (supabase as any)
+            .from('assets')
+            .update({
+                ...updates,
+                updated_at: new Date().toISOString(),
+            })
+            .eq('id', id);
+
+        if (!error) {
+            await get().fetchAssets();
+        }
+    },
+
+    deleteAsset: async (id) => {
+        const { error } = await (supabase as any)
+            .from('assets')
+            .delete()
+            .eq('id', id);
+
+        if (!error) {
+            await get().fetchAssets();
         }
     },
 }));

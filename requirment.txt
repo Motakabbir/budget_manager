@@ -60,6 +60,7 @@ Estimated time to reach goal
 Required monthly savings
 Goal priority ranking
 Auto-contribution from income
+
 📱 7. REPORTS & ANALYTICS
 Features:
 Comprehensive Reports
@@ -82,6 +83,7 @@ PDF reports with charts
 Excel/CSV exports
 Tax-ready formats
 Year-end summary reports
+
 🔔 8. ENHANCED NOTIFICATIONS
 Features:
 Smart Alerts
@@ -101,6 +103,7 @@ In-app notifications
 Push notifications (PWA)
 SMS alerts (via Twilio integration)
 Customizable notification times
+
 🔒 9. SECURITY & PRIVACY
 Features:
 Data Protection
@@ -116,6 +119,7 @@ Cloud backup (Supabase Storage)
 Multi-device sync
 Manual backup download
 Restore from backup
+
 🌐 10. INTEGRATIONS (FUTURE)
 Features:
 Bank Integration (via Plaid API)
