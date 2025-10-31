@@ -12,6 +12,7 @@ import {
     Building2,
     CreditCard,
     HandCoins,
+    RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
@@ -22,6 +23,7 @@ const navigation = [
     { name: 'Bank Accounts', href: '/bank-accounts', icon: Building2 },
     { name: 'Cards', href: '/cards', icon: CreditCard },
     { name: 'Loans', href: '/loans', icon: HandCoins },
+    { name: 'Recurring', href: '/recurring', icon: RefreshCw },
     { name: 'Categories', href: '/categories', icon: Tag },
     { name: 'Income', href: '/income', icon: TrendingUp },
     { name: 'Expenses', href: '/expenses', icon: TrendingDown },

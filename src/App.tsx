@@ -12,6 +12,7 @@ const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
 const BankAccountsPage = lazy(() => import('@/pages/BankAccountsPage'));
 const CardsPage = lazy(() => import('@/pages/CardsPage'));
 const LoansPage = lazy(() => import('@/pages/LoansPage'));
+const RecurringTransactionsPage = lazy(() => import('@/pages/RecurringTransactionsPage'));
 const IncomePage = lazy(() => import('@/pages/IncomePage'));
 const ExpensesPage = lazy(() => import('@/pages/ExpensesPage'));
 const CategoriesPage = lazy(() => import('@/pages/CategoriesPage'));
@@ -77,6 +78,14 @@ function App() {
                     element={
                         <Suspense fallback={<DashboardSkeleton />}>
                             <LoansPage />
+                        </Suspense>
+                    }
+                />
+                <Route
+                    path="recurring"
+                    element={
+                        <Suspense fallback={<DashboardSkeleton />}>
+                            <RecurringTransactionsPage />
                         </Suspense>
                     }
                 />
