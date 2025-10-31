@@ -11,6 +11,7 @@ import {
     X,
     Building2,
     CreditCard,
+    HandCoins,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
@@ -20,6 +21,7 @@ const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Bank Accounts', href: '/bank-accounts', icon: Building2 },
     { name: 'Cards', href: '/cards', icon: CreditCard },
+    { name: 'Loans', href: '/loans', icon: HandCoins },
     { name: 'Categories', href: '/categories', icon: Tag },
     { name: 'Income', href: '/income', icon: TrendingUp },
     { name: 'Expenses', href: '/expenses', icon: TrendingDown },

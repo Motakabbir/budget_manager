@@ -130,6 +130,68 @@ export type CardPayment = {
     updated_at: string;
 };
 
+export type Loan = {
+    id: string;
+    user_id: string;
+    loan_type: 'given' | 'taken';
+    party_name: string;
+    party_contact: string | null;
+    principal_amount: number;
+    interest_rate: number;
+    interest_type: 'simple' | 'compound' | 'none';
+    total_amount: number;
+    outstanding_balance: number;
+    start_date: string;
+    due_date: string | null;
+    payment_frequency: 'one-time' | 'daily' | 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' | 'semi-annually' | 'yearly';
+    next_payment_date: string | null;
+    status: 'active' | 'completed' | 'defaulted' | 'cancelled';
+    loan_account_id: string | null;
+    purpose: string | null;
+    collateral: string | null;
+    documents: any | null;
+    notes: string | null;
+    created_at: string;
+    updated_at: string;
+};
+
+export type LoanPayment = {
+    id: string;
+    user_id: string;
+    loan_id: string;
+    payment_amount: number;
+    principal_paid: number;
+    interest_paid: number;
+    payment_date: string;
+    payment_method: string | null;
+    from_account_id: string | null;
+    to_account_id: string | null;
+    outstanding_before: number;
+    outstanding_after: number;
+    late_fee: number;
+    notes: string | null;
+    receipt_number: string | null;
+    created_at: string;
+    updated_at: string;
+};
+
+export type RecurringTransaction = {
+    id: string;
+    user_id: string;
+    category_id: string;
+    amount: number;
+    description: string | null;
+    type: 'income' | 'expense';
+    frequency: 'daily' | 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' | 'yearly';
+    start_date: string;
+    end_date: string | null;
+    next_occurrence: string;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+    category?: Category | null;
+};
+
 // Query Keys
 export const queryKeys = {
     transactions: (startDate?: string, endDate?: string) => ['transactions', startDate, endDate] as const,
@@ -141,6 +203,9 @@ export const queryKeys = {
     accountTransfers: ['accountTransfers'] as const,
     paymentCards: ['paymentCards'] as const,
     cardPayments: ['cardPayments'] as const,
+    loans: ['loans'] as const,
+    loanPayments: ['loanPayments'] as const,
+    recurringTransactions: ['recurringTransactions'] as const,
 };
 
 // ============= CATEGORIES =============
@@ -951,6 +1016,400 @@ export function useDeleteCardPayment() {
         },
         onError: (error: Error) => {
             toast.error('Failed to delete payment', { description: error.message });
+        },
+    });
+}
+
+// ============= LOANS =============
+
+export function useLoans() {
+    return useQuery<Loan[]>({
+        queryKey: queryKeys.loans,
+        queryFn: async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { data, error } = await supabase
+                .from('loans')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+            return data || [];
+        },
+        staleTime: 1000 * 60 * 5, // 5 minutes
+    });
+}
+
+export function useCreateLoan() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (loan: Omit<Loan, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'total_amount' | 'outstanding_balance'>) => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { data, error } = await supabase
+                .from('loans')
+                .insert({
+                    user_id: user.id,
+                    ...loan,
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.loans });
+            toast.success('Loan created successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to create loan', { description: error.message });
+        },
+    });
+}
+
+export function useUpdateLoan() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ id, updates }: { id: string; updates: Partial<Loan> }) => {
+            const { data, error } = await supabase
+                .from('loans')
+                .update(updates)
+                .eq('id', id)
+                .select()
+                .single();
+
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.loans });
+            toast.success('Loan updated successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to update loan', { description: error.message });
+        },
+    });
+}
+
+export function useDeleteLoan() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (id: string) => {
+            const { error } = await supabase
+                .from('loans')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.loans });
+            queryClient.invalidateQueries({ queryKey: queryKeys.loanPayments });
+            toast.success('Loan deleted successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to delete loan', { description: error.message });
+        },
+    });
+}
+
+// ============= LOAN PAYMENTS =============
+
+export function useLoanPayments() {
+    return useQuery<LoanPayment[]>({
+        queryKey: queryKeys.loanPayments,
+        queryFn: async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { data, error } = await supabase
+                .from('loan_payments')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('payment_date', { ascending: false });
+
+            if (error) throw error;
+            return data || [];
+        },
+        staleTime: 1000 * 60 * 5, // 5 minutes
+    });
+}
+
+export function useMakeLoanPayment() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (payment: {
+            loan_id: string;
+            payment_amount: number;
+            from_account_id?: string;
+            payment_method?: string;
+            payment_date?: string;
+            late_fee?: number;
+            notes?: string;
+            receipt_number?: string;
+        }) => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { data, error } = await supabase.rpc('make_loan_payment', {
+                p_user_id: user.id,
+                p_loan_id: payment.loan_id,
+                p_payment_amount: payment.payment_amount,
+                p_from_account_id: payment.from_account_id || undefined,
+                p_payment_method: payment.payment_method || 'bank_transfer',
+                p_payment_date: payment.payment_date || new Date().toISOString().split('T')[0],
+                p_late_fee: payment.late_fee || 0,
+                p_notes: payment.notes || undefined,
+                p_receipt_number: payment.receipt_number || undefined,
+            });
+
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.loans });
+            queryClient.invalidateQueries({ queryKey: queryKeys.loanPayments });
+            queryClient.invalidateQueries({ queryKey: queryKeys.bankAccounts });
+            toast.success('Payment processed successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Payment failed', { description: error.message });
+        },
+    });
+}
+
+export function useReceiveLoanPayment() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (payment: {
+            loan_id: string;
+            payment_amount: number;
+            to_account_id?: string;
+            payment_method?: string;
+            payment_date?: string;
+            late_fee?: number;
+            notes?: string;
+            receipt_number?: string;
+        }) => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { data, error } = await supabase.rpc('receive_loan_payment', {
+                p_user_id: user.id,
+                p_loan_id: payment.loan_id,
+                p_payment_amount: payment.payment_amount,
+                p_to_account_id: payment.to_account_id || undefined,
+                p_payment_method: payment.payment_method || 'bank_transfer',
+                p_payment_date: payment.payment_date || new Date().toISOString().split('T')[0],
+                p_late_fee: payment.late_fee || 0,
+                p_notes: payment.notes || undefined,
+                p_receipt_number: payment.receipt_number || undefined,
+            });
+
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.loans });
+            queryClient.invalidateQueries({ queryKey: queryKeys.loanPayments });
+            queryClient.invalidateQueries({ queryKey: queryKeys.bankAccounts });
+            toast.success('Payment received successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Payment failed', { description: error.message });
+        },
+    });
+}
+
+export function useDeleteLoanPayment() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (id: string) => {
+            const { error } = await supabase
+                .from('loan_payments')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.loanPayments });
+            toast.success('Payment record deleted successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to delete payment', { description: error.message });
+        },
+    });
+}
+
+// ============= RECURRING TRANSACTIONS =============
+
+export function useRecurringTransactions() {
+    return useQuery<RecurringTransaction[]>({
+        queryKey: queryKeys.recurringTransactions,
+        queryFn: async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { data, error } = await supabase
+                .from('recurring_transactions')
+                .select(`
+                    *,
+                    category:categories(*)
+                `)
+                .eq('user_id', user.id)
+                .order('next_occurrence', { ascending: true });
+
+            if (error) throw error;
+            return data as RecurringTransaction[];
+        },
+        staleTime: 5 * 60 * 1000, // 5 minutes
+    });
+}
+
+export function useCreateRecurring() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (recurring: {
+            category_id: string;
+            amount: number;
+            description?: string;
+            type: 'income' | 'expense';
+            frequency: 'daily' | 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' | 'yearly';
+            start_date: string;
+            end_date?: string;
+            next_occurrence: string;
+        }) => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { data, error } = await supabase
+                .from('recurring_transactions')
+                .insert({
+                    ...recurring,
+                    user_id: user.id,
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.recurringTransactions });
+            toast.success('Recurring transaction created successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to create recurring transaction', { description: error.message });
+        },
+    });
+}
+
+export function useUpdateRecurring() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ id, updates }: { id: string; updates: Partial<RecurringTransaction> }) => {
+            const { data, error } = await supabase
+                .from('recurring_transactions')
+                .update(updates)
+                .eq('id', id)
+                .select()
+                .single();
+
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.recurringTransactions });
+            toast.success('Recurring transaction updated successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to update recurring transaction', { description: error.message });
+        },
+    });
+}
+
+export function useDeleteRecurring() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (id: string) => {
+            const { error } = await supabase
+                .from('recurring_transactions')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.recurringTransactions });
+            toast.success('Recurring transaction deleted successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to delete recurring transaction', { description: error.message });
+        },
+    });
+}
+
+export function useToggleRecurring() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
+            const { data, error } = await supabase
+                .from('recurring_transactions')
+                .update({ is_active: isActive })
+                .eq('id', id)
+                .select()
+                .single();
+
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.recurringTransactions });
+            toast.success(variables.isActive ? 'Recurring transaction activated' : 'Recurring transaction deactivated');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to toggle recurring transaction', { description: error.message });
+        },
+    });
+}
+
+export function useCreateFromRecurring() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (recurringId: string) => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { data, error } = await supabase.rpc('create_recurring_transaction', {
+                recurring_id: recurringId,
+            });
+
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.recurringTransactions });
+            queryClient.invalidateQueries({ queryKey: queryKeys.transactions() });
+            toast.success('Transaction created from recurring template');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to create transaction', { description: error.message });
         },
     });
 }

@@ -81,6 +81,7 @@ export type Database = {
                     account_id: string | null
                     card_id: string | null
                     payment_method: string | null
+                    loan_id: string | null
                     created_at: string
                     updated_at: string
                 }
@@ -95,6 +96,7 @@ export type Database = {
                     account_id?: string | null
                     card_id?: string | null
                     payment_method?: string | null
+                    loan_id?: string | null
                     created_at?: string
                     updated_at?: string
                 }
@@ -109,6 +111,7 @@ export type Database = {
                     account_id?: string | null
                     card_id?: string | null
                     payment_method?: string | null
+                    loan_id?: string | null
                     created_at?: string
                     updated_at?: string
                 }
@@ -227,9 +230,12 @@ export type Database = {
                     category_id: string
                     amount: number
                     description: string | null
-                    frequency: 'daily' | 'weekly' | 'monthly' | 'yearly'
-                    next_date: string
                     type: 'income' | 'expense'
+                    frequency: 'daily' | 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' | 'yearly'
+                    start_date: string
+                    end_date: string | null
+                    next_occurrence: string
+                    is_active: boolean
                     created_at: string
                     updated_at: string
                 }
@@ -239,9 +245,12 @@ export type Database = {
                     category_id: string
                     amount: number
                     description?: string | null
-                    frequency: 'daily' | 'weekly' | 'monthly' | 'yearly'
-                    next_date: string
                     type: 'income' | 'expense'
+                    frequency: 'daily' | 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' | 'yearly'
+                    start_date?: string
+                    end_date?: string | null
+                    next_occurrence: string
+                    is_active?: boolean
                     created_at?: string
                     updated_at?: string
                 }
@@ -251,13 +260,29 @@ export type Database = {
                     category_id?: string
                     amount?: number
                     description?: string | null
-                    frequency?: 'daily' | 'weekly' | 'monthly' | 'yearly'
-                    next_date?: string
                     type?: 'income' | 'expense'
+                    frequency?: 'daily' | 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' | 'yearly'
+                    start_date?: string
+                    end_date?: string | null
+                    next_occurrence?: string
+                    is_active?: boolean
                     created_at?: string
                     updated_at?: string
                 }
-                Relationships: []
+                Relationships: [
+                    {
+                        foreignKeyName: "recurring_transactions_category_id_fkey"
+                        columns: ["category_id"]
+                        referencedRelation: "categories"
+                        referencedColumns: ["id"]
+                    },
+                    {
+                        foreignKeyName: "recurring_transactions_user_id_fkey"
+                        columns: ["user_id"]
+                        referencedRelation: "users"
+                        referencedColumns: ["id"]
+                    }
+                ]
             }
             notifications: {
                 Row: {
@@ -586,6 +611,167 @@ export type Database = {
                     }
                 ]
             }
+            loans: {
+                Row: {
+                    id: string
+                    user_id: string
+                    loan_type: 'given' | 'taken'
+                    party_name: string
+                    party_contact: string | null
+                    principal_amount: number
+                    interest_rate: number
+                    interest_type: 'simple' | 'compound' | 'none'
+                    total_amount: number
+                    outstanding_balance: number
+                    start_date: string
+                    due_date: string | null
+                    payment_frequency: 'one-time' | 'daily' | 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' | 'semi-annually' | 'yearly'
+                    next_payment_date: string | null
+                    status: 'active' | 'completed' | 'defaulted' | 'cancelled'
+                    loan_account_id: string | null
+                    purpose: string | null
+                    collateral: string | null
+                    documents: Json | null
+                    notes: string | null
+                    created_at: string
+                    updated_at: string
+                }
+                Insert: {
+                    id?: string
+                    user_id: string
+                    loan_type: 'given' | 'taken'
+                    party_name: string
+                    party_contact?: string | null
+                    principal_amount: number
+                    interest_rate?: number
+                    interest_type?: 'simple' | 'compound' | 'none'
+                    total_amount?: number
+                    outstanding_balance?: number
+                    start_date: string
+                    due_date?: string | null
+                    payment_frequency?: 'one-time' | 'daily' | 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' | 'semi-annually' | 'yearly'
+                    next_payment_date?: string | null
+                    status?: 'active' | 'completed' | 'defaulted' | 'cancelled'
+                    loan_account_id?: string | null
+                    purpose?: string | null
+                    collateral?: string | null
+                    documents?: Json | null
+                    notes?: string | null
+                    created_at?: string
+                    updated_at?: string
+                }
+                Update: {
+                    id?: string
+                    user_id?: string
+                    loan_type?: 'given' | 'taken'
+                    party_name?: string
+                    party_contact?: string | null
+                    principal_amount?: number
+                    interest_rate?: number
+                    interest_type?: 'simple' | 'compound' | 'none'
+                    total_amount?: number
+                    outstanding_balance?: number
+                    start_date?: string
+                    due_date?: string | null
+                    payment_frequency?: 'one-time' | 'daily' | 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' | 'semi-annually' | 'yearly'
+                    next_payment_date?: string | null
+                    status?: 'active' | 'completed' | 'defaulted' | 'cancelled'
+                    loan_account_id?: string | null
+                    purpose?: string | null
+                    collateral?: string | null
+                    documents?: Json | null
+                    notes?: string | null
+                    created_at?: string
+                    updated_at?: string
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "loans_loan_account_id_fkey"
+                        columns: ["loan_account_id"]
+                        referencedRelation: "bank_accounts"
+                        referencedColumns: ["id"]
+                    }
+                ]
+            }
+            loan_payments: {
+                Row: {
+                    id: string
+                    user_id: string
+                    loan_id: string
+                    payment_amount: number
+                    principal_paid: number
+                    interest_paid: number
+                    payment_date: string
+                    payment_method: string | null
+                    from_account_id: string | null
+                    to_account_id: string | null
+                    outstanding_before: number
+                    outstanding_after: number
+                    late_fee: number
+                    notes: string | null
+                    receipt_number: string | null
+                    created_at: string
+                    updated_at: string
+                }
+                Insert: {
+                    id?: string
+                    user_id: string
+                    loan_id: string
+                    payment_amount: number
+                    principal_paid?: number
+                    interest_paid?: number
+                    payment_date?: string
+                    payment_method?: string | null
+                    from_account_id?: string | null
+                    to_account_id?: string | null
+                    outstanding_before?: number
+                    outstanding_after?: number
+                    late_fee?: number
+                    notes?: string | null
+                    receipt_number?: string | null
+                    created_at?: string
+                    updated_at?: string
+                }
+                Update: {
+                    id?: string
+                    user_id?: string
+                    loan_id?: string
+                    payment_amount?: number
+                    principal_paid?: number
+                    interest_paid?: number
+                    payment_date?: string
+                    payment_method?: string | null
+                    from_account_id?: string | null
+                    to_account_id?: string | null
+                    outstanding_before?: number
+                    outstanding_after?: number
+                    late_fee?: number
+                    notes?: string | null
+                    receipt_number?: string | null
+                    created_at?: string
+                    updated_at?: string
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "loan_payments_loan_id_fkey"
+                        columns: ["loan_id"]
+                        referencedRelation: "loans"
+                        referencedColumns: ["id"]
+                    },
+                    {
+                        foreignKeyName: "loan_payments_from_account_id_fkey"
+                        columns: ["from_account_id"]
+                        referencedRelation: "bank_accounts"
+                        referencedColumns: ["id"]
+                    },
+                    {
+                        foreignKeyName: "loan_payments_to_account_id_fkey"
+                        columns: ["to_account_id"]
+                        referencedRelation: "bank_accounts"
+                        referencedColumns: ["id"]
+                    }
+                ]
+            }
         }
         Views: {
             [_ in never]: never
@@ -622,6 +808,40 @@ export type Database = {
                     p_charge_amount: number
                 }
                 Returns: boolean
+            }
+            make_loan_payment: {
+                Args: {
+                    p_user_id: string
+                    p_loan_id: string
+                    p_payment_amount: number
+                    p_from_account_id?: string
+                    p_payment_method?: string
+                    p_payment_date?: string
+                    p_late_fee?: number
+                    p_notes?: string
+                    p_receipt_number?: string
+                }
+                Returns: string
+            }
+            receive_loan_payment: {
+                Args: {
+                    p_user_id: string
+                    p_loan_id: string
+                    p_payment_amount: number
+                    p_to_account_id?: string
+                    p_payment_method?: string
+                    p_payment_date?: string
+                    p_late_fee?: number
+                    p_notes?: string
+                    p_receipt_number?: string
+                }
+                Returns: string
+            }
+            create_recurring_transaction: {
+                Args: {
+                    recurring_id: string
+                }
+                Returns: string
             }
         }
         Enums: {
