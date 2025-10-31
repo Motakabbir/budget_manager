@@ -60,6 +60,157 @@ export type CategoryBudget = {
     updated_at: string;
 };
 
+export type BankAccount = {
+    id: string;
+    user_id: string;
+    account_name: string;
+    bank_name: string | null;
+    account_type: 'checking' | 'savings' | 'investment' | 'cash' | 'wallet' | 'other';
+    account_number: string | null;
+    balance: number;
+    currency: string;
+    color: string;
+    icon: string | null;
+    is_active: boolean;
+    notes: string | null;
+    created_at: string;
+    updated_at: string;
+};
+
+export type AccountTransfer = {
+    id: string;
+    user_id: string;
+    from_account_id: string;
+    to_account_id: string;
+    amount: number;
+    transfer_fee: number;
+    description: string | null;
+    date: string;
+    created_at: string;
+    updated_at: string;
+    from_account?: BankAccount;
+    to_account?: BankAccount;
+};
+
+export type PaymentCard = {
+    id: string;
+    user_id: string;
+    card_name: string;
+    card_type: 'debit' | 'credit';
+    card_network: string | null;
+    last_four_digits: string | null;
+    bank_account_id: string | null;
+    credit_limit: number | null;
+    current_balance: number;
+    available_credit: number | null;
+    interest_rate: number | null;
+    billing_cycle_day: number | null;
+    payment_due_day: number | null;
+    minimum_payment_percent: number | null;
+    expiry_date: string | null;
+    cardholder_name: string | null;
+    color: string;
+    icon: string | null;
+    is_active: boolean;
+    notes: string | null;
+    created_at: string;
+    updated_at: string;
+};
+
+export type CardPayment = {
+    id: string;
+    user_id: string;
+    card_id: string;
+    payment_amount: number;
+    payment_date: string;
+    payment_method: string | null;
+    from_account_id: string | null;
+    notes: string | null;
+    created_at: string;
+    updated_at: string;
+};
+
+export type Loan = {
+    id: string;
+    user_id: string;
+    loan_type: 'given' | 'taken';
+    party_name: string;
+    party_contact: string | null;
+    principal_amount: number;
+    interest_rate: number;
+    interest_type: 'simple' | 'compound' | 'none';
+    total_amount: number;
+    outstanding_balance: number;
+    start_date: string;
+    due_date: string | null;
+    payment_frequency: 'one-time' | 'daily' | 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' | 'semi-annually' | 'yearly';
+    next_payment_date: string | null;
+    status: 'active' | 'completed' | 'defaulted' | 'cancelled';
+    loan_account_id: string | null;
+    purpose: string | null;
+    collateral: string | null;
+    documents: any | null;
+    notes: string | null;
+    created_at: string;
+    updated_at: string;
+};
+
+export type LoanPayment = {
+    id: string;
+    user_id: string;
+    loan_id: string;
+    payment_amount: number;
+    principal_paid: number;
+    interest_paid: number;
+    payment_date: string;
+    payment_method: string | null;
+    from_account_id: string | null;
+    to_account_id: string | null;
+    outstanding_before: number;
+    outstanding_after: number;
+    late_fee: number;
+    notes: string | null;
+    receipt_number: string | null;
+    created_at: string;
+    updated_at: string;
+};
+
+export type RecurringTransaction = {
+    id: string;
+    user_id: string;
+    category_id: string;
+    amount: number;
+    description: string | null;
+    type: 'income' | 'expense';
+    frequency: 'daily' | 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' | 'yearly';
+    start_date: string;
+    end_date: string | null;
+    next_occurrence: string;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+    category?: Category | null;
+};
+
+export type Budget = {
+    id: string;
+    user_id: string;
+    category_id: string;
+    amount: number;
+    period: 'monthly' | 'yearly';
+    created_at: string;
+    updated_at: string;
+    category?: Category | null;
+};
+
+export type BudgetWithSpending = Budget & {
+    spent: number;
+    remaining: number;
+    percentage: number;
+    status: 'safe' | 'warning' | 'exceeded';
+};
+
+
 // Query Keys
 export const queryKeys = {
     transactions: (startDate?: string, endDate?: string) => ['transactions', startDate, endDate] as const,
@@ -67,6 +218,14 @@ export const queryKeys = {
     savingsGoals: ['savingsGoals'] as const,
     userSettings: ['userSettings'] as const,
     categoryBudgets: ['categoryBudgets'] as const,
+    budgets: ['budgets'] as const,
+    bankAccounts: ['bankAccounts'] as const,
+    accountTransfers: ['accountTransfers'] as const,
+    paymentCards: ['paymentCards'] as const,
+    cardPayments: ['cardPayments'] as const,
+    loans: ['loans'] as const,
+    loanPayments: ['loanPayments'] as const,
+    recurringTransactions: ['recurringTransactions'] as const,
 };
 
 // ============= CATEGORIES =============
@@ -509,5 +668,993 @@ export function useDeleteCategoryBudget() {
         onError: (error: Error) => {
             toast.error('Failed to delete budget', { description: error.message });
         },
+    });
+}
+
+// ============= BANK ACCOUNTS =============
+
+export function useBankAccounts() {
+    return useQuery<BankAccount[]>({
+        queryKey: queryKeys.bankAccounts,
+        queryFn: async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { data, error } = await supabase
+                .from('bank_accounts')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+            return data || [];
+        },
+        staleTime: 1000 * 60 * 5, // 5 minutes
+    });
+}
+
+export function useCreateBankAccount() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (account: Omit<BankAccount, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { data, error } = await supabase
+                .from('bank_accounts')
+                .insert({
+                    user_id: user.id,
+                    ...account,
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.bankAccounts });
+            toast.success('Bank account created successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to create bank account', { description: error.message });
+        },
+    });
+}
+
+export function useUpdateBankAccount() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ id, updates }: { id: string; updates: Partial<BankAccount> }) => {
+            const { data, error } = await supabase
+                .from('bank_accounts')
+                .update(updates)
+                .eq('id', id)
+                .select()
+                .single();
+
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.bankAccounts });
+            toast.success('Bank account updated successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to update bank account', { description: error.message });
+        },
+    });
+}
+
+export function useDeleteBankAccount() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (id: string) => {
+            const { error } = await supabase
+                .from('bank_accounts')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.bankAccounts });
+            toast.success('Bank account deleted successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to delete bank account', { description: error.message });
+        },
+    });
+}
+
+// ============= ACCOUNT TRANSFERS =============
+
+export function useAccountTransfers() {
+    return useQuery<AccountTransfer[]>({
+        queryKey: queryKeys.accountTransfers,
+        queryFn: async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { data, error } = await supabase
+                .from('account_transfers')
+                .select(`
+                    *,
+                    from_account:bank_accounts!from_account_id(*),
+                    to_account:bank_accounts!to_account_id(*)
+                `)
+                .eq('user_id', user.id)
+                .order('date', { ascending: false });
+
+            if (error) throw error;
+            return data || [];
+        },
+        staleTime: 1000 * 60 * 5, // 5 minutes
+    });
+}
+
+export function useCreateAccountTransfer() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (transfer: {
+            from_account_id: string;
+            to_account_id: string;
+            amount: number;
+            transfer_fee?: number;
+            description?: string;
+            date?: string;
+        }) => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { data, error } = await supabase.rpc('transfer_between_accounts', {
+                p_user_id: user.id,
+                p_from_account_id: transfer.from_account_id,
+                p_to_account_id: transfer.to_account_id,
+                p_amount: transfer.amount,
+                p_transfer_fee: transfer.transfer_fee || 0,
+                p_description: transfer.description || undefined,
+                p_date: transfer.date || new Date().toISOString().split('T')[0],
+            });
+
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.bankAccounts });
+            queryClient.invalidateQueries({ queryKey: queryKeys.accountTransfers });
+            toast.success('Transfer completed successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Transfer failed', { description: error.message });
+        },
+    });
+}
+
+export function useDeleteAccountTransfer() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (id: string) => {
+            const { error } = await supabase
+                .from('account_transfers')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.accountTransfers });
+            toast.success('Transfer deleted successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to delete transfer', { description: error.message });
+        },
+    });
+}
+
+// ============= PAYMENT CARDS =============
+
+export function usePaymentCards() {
+    return useQuery<PaymentCard[]>({
+        queryKey: queryKeys.paymentCards,
+        queryFn: async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { data, error } = await supabase
+                .from('payment_cards')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+            return data || [];
+        },
+        staleTime: 1000 * 60 * 5, // 5 minutes
+    });
+}
+
+export function useCreatePaymentCard() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (card: Omit<PaymentCard, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'available_credit'>) => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { data, error } = await supabase
+                .from('payment_cards')
+                .insert({
+                    user_id: user.id,
+                    ...card,
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.paymentCards });
+            toast.success('Card added successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to add card', { description: error.message });
+        },
+    });
+}
+
+export function useUpdatePaymentCard() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ id, updates }: { id: string; updates: Partial<PaymentCard> }) => {
+            const { data, error } = await supabase
+                .from('payment_cards')
+                .update(updates)
+                .eq('id', id)
+                .select()
+                .single();
+
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.paymentCards });
+            toast.success('Card updated successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to update card', { description: error.message });
+        },
+    });
+}
+
+export function useDeletePaymentCard() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (id: string) => {
+            const { error } = await supabase
+                .from('payment_cards')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.paymentCards });
+            toast.success('Card deleted successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to delete card', { description: error.message });
+        },
+    });
+}
+
+// ============= CARD PAYMENTS =============
+
+export function useCardPayments() {
+    return useQuery<CardPayment[]>({
+        queryKey: queryKeys.cardPayments,
+        queryFn: async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { data, error } = await supabase
+                .from('card_payments')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('payment_date', { ascending: false });
+
+            if (error) throw error;
+            return data || [];
+        },
+        staleTime: 1000 * 60 * 5, // 5 minutes
+    });
+}
+
+export function useMakeCardPayment() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (payment: {
+            card_id: string;
+            payment_amount: number;
+            from_account_id?: string;
+            payment_method?: string;
+            payment_date?: string;
+            notes?: string;
+        }) => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { data, error } = await supabase.rpc('make_card_payment', {
+                p_user_id: user.id,
+                p_card_id: payment.card_id,
+                p_payment_amount: payment.payment_amount,
+                p_from_account_id: payment.from_account_id || undefined,
+                p_payment_method: payment.payment_method || 'bank_transfer',
+                p_payment_date: payment.payment_date || new Date().toISOString().split('T')[0],
+                p_notes: payment.notes || undefined,
+            });
+
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.paymentCards });
+            queryClient.invalidateQueries({ queryKey: queryKeys.cardPayments });
+            queryClient.invalidateQueries({ queryKey: queryKeys.bankAccounts });
+            toast.success('Payment processed successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Payment failed', { description: error.message });
+        },
+    });
+}
+
+export function useDeleteCardPayment() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (id: string) => {
+            const { error } = await supabase
+                .from('card_payments')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.cardPayments });
+            toast.success('Payment record deleted successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to delete payment', { description: error.message });
+        },
+    });
+}
+
+// ============= LOANS =============
+
+export function useLoans() {
+    return useQuery<Loan[]>({
+        queryKey: queryKeys.loans,
+        queryFn: async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { data, error } = await supabase
+                .from('loans')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+            return data || [];
+        },
+        staleTime: 1000 * 60 * 5, // 5 minutes
+    });
+}
+
+export function useCreateLoan() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (loan: Omit<Loan, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'total_amount' | 'outstanding_balance'>) => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { data, error } = await supabase
+                .from('loans')
+                .insert({
+                    user_id: user.id,
+                    ...loan,
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.loans });
+            toast.success('Loan created successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to create loan', { description: error.message });
+        },
+    });
+}
+
+export function useUpdateLoan() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ id, updates }: { id: string; updates: Partial<Loan> }) => {
+            const { data, error } = await supabase
+                .from('loans')
+                .update(updates)
+                .eq('id', id)
+                .select()
+                .single();
+
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.loans });
+            toast.success('Loan updated successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to update loan', { description: error.message });
+        },
+    });
+}
+
+export function useDeleteLoan() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (id: string) => {
+            const { error } = await supabase
+                .from('loans')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.loans });
+            queryClient.invalidateQueries({ queryKey: queryKeys.loanPayments });
+            toast.success('Loan deleted successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to delete loan', { description: error.message });
+        },
+    });
+}
+
+// ============= LOAN PAYMENTS =============
+
+export function useLoanPayments() {
+    return useQuery<LoanPayment[]>({
+        queryKey: queryKeys.loanPayments,
+        queryFn: async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { data, error } = await supabase
+                .from('loan_payments')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('payment_date', { ascending: false });
+
+            if (error) throw error;
+            return data || [];
+        },
+        staleTime: 1000 * 60 * 5, // 5 minutes
+    });
+}
+
+export function useMakeLoanPayment() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (payment: {
+            loan_id: string;
+            payment_amount: number;
+            from_account_id?: string;
+            payment_method?: string;
+            payment_date?: string;
+            late_fee?: number;
+            notes?: string;
+            receipt_number?: string;
+        }) => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { data, error } = await supabase.rpc('make_loan_payment', {
+                p_user_id: user.id,
+                p_loan_id: payment.loan_id,
+                p_payment_amount: payment.payment_amount,
+                p_from_account_id: payment.from_account_id || undefined,
+                p_payment_method: payment.payment_method || 'bank_transfer',
+                p_payment_date: payment.payment_date || new Date().toISOString().split('T')[0],
+                p_late_fee: payment.late_fee || 0,
+                p_notes: payment.notes || undefined,
+                p_receipt_number: payment.receipt_number || undefined,
+            });
+
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.loans });
+            queryClient.invalidateQueries({ queryKey: queryKeys.loanPayments });
+            queryClient.invalidateQueries({ queryKey: queryKeys.bankAccounts });
+            toast.success('Payment processed successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Payment failed', { description: error.message });
+        },
+    });
+}
+
+export function useReceiveLoanPayment() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (payment: {
+            loan_id: string;
+            payment_amount: number;
+            to_account_id?: string;
+            payment_method?: string;
+            payment_date?: string;
+            late_fee?: number;
+            notes?: string;
+            receipt_number?: string;
+        }) => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { data, error } = await supabase.rpc('receive_loan_payment', {
+                p_user_id: user.id,
+                p_loan_id: payment.loan_id,
+                p_payment_amount: payment.payment_amount,
+                p_to_account_id: payment.to_account_id || undefined,
+                p_payment_method: payment.payment_method || 'bank_transfer',
+                p_payment_date: payment.payment_date || new Date().toISOString().split('T')[0],
+                p_late_fee: payment.late_fee || 0,
+                p_notes: payment.notes || undefined,
+                p_receipt_number: payment.receipt_number || undefined,
+            });
+
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.loans });
+            queryClient.invalidateQueries({ queryKey: queryKeys.loanPayments });
+            queryClient.invalidateQueries({ queryKey: queryKeys.bankAccounts });
+            toast.success('Payment received successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Payment failed', { description: error.message });
+        },
+    });
+}
+
+export function useDeleteLoanPayment() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (id: string) => {
+            const { error } = await supabase
+                .from('loan_payments')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.loanPayments });
+            toast.success('Payment record deleted successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to delete payment', { description: error.message });
+        },
+    });
+}
+
+// ============= RECURRING TRANSACTIONS =============
+
+export function useRecurringTransactions() {
+    return useQuery<RecurringTransaction[]>({
+        queryKey: queryKeys.recurringTransactions,
+        queryFn: async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { data, error } = await supabase
+                .from('recurring_transactions')
+                .select(`
+                    *,
+                    category:categories(*)
+                `)
+                .eq('user_id', user.id)
+                .order('next_occurrence', { ascending: true });
+
+            if (error) throw error;
+            return data as RecurringTransaction[];
+        },
+        staleTime: 5 * 60 * 1000, // 5 minutes
+    });
+}
+
+export function useCreateRecurring() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (recurring: {
+            category_id: string;
+            amount: number;
+            description?: string;
+            type: 'income' | 'expense';
+            frequency: 'daily' | 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' | 'yearly';
+            start_date: string;
+            end_date?: string;
+            next_occurrence: string;
+        }) => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { data, error } = await supabase
+                .from('recurring_transactions')
+                .insert({
+                    ...recurring,
+                    user_id: user.id,
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.recurringTransactions });
+            toast.success('Recurring transaction created successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to create recurring transaction', { description: error.message });
+        },
+    });
+}
+
+export function useUpdateRecurring() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ id, updates }: { id: string; updates: Partial<RecurringTransaction> }) => {
+            const { data, error } = await supabase
+                .from('recurring_transactions')
+                .update(updates)
+                .eq('id', id)
+                .select()
+                .single();
+
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.recurringTransactions });
+            toast.success('Recurring transaction updated successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to update recurring transaction', { description: error.message });
+        },
+    });
+}
+
+export function useDeleteRecurring() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (id: string) => {
+            const { error } = await supabase
+                .from('recurring_transactions')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.recurringTransactions });
+            toast.success('Recurring transaction deleted successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to delete recurring transaction', { description: error.message });
+        },
+    });
+}
+
+export function useToggleRecurring() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
+            const { data, error } = await supabase
+                .from('recurring_transactions')
+                .update({ is_active: isActive })
+                .eq('id', id)
+                .select()
+                .single();
+
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.recurringTransactions });
+            toast.success(variables.isActive ? 'Recurring transaction activated' : 'Recurring transaction deactivated');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to toggle recurring transaction', { description: error.message });
+        },
+    });
+}
+
+export function useCreateFromRecurring() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (recurringId: string) => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { data, error } = await supabase.rpc('create_recurring_transaction', {
+                recurring_id: recurringId,
+            });
+
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.recurringTransactions });
+            queryClient.invalidateQueries({ queryKey: queryKeys.transactions() });
+            toast.success('Transaction created from recurring template');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to create transaction', { description: error.message });
+        },
+    });
+}
+
+// ============= BUDGETS =============
+
+export function useBudgets() {
+    return useQuery<Budget[]>({
+        queryKey: queryKeys.budgets,
+        queryFn: async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { data, error } = await supabase
+                .from('category_budgets')
+                .select('*, category:categories(*)')
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+            return data as Budget[];
+        },
+        staleTime: 5 * 60 * 1000, // 5 minutes
+    });
+}
+
+export function useCreateBudget() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (params: { category_id: string; amount: number; period: 'monthly' | 'yearly' }) => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { data, error } = await supabase
+                .from('category_budgets')
+                .insert({
+                    user_id: user.id,
+                    category_id: params.category_id,
+                    amount: params.amount,
+                    period: params.period,
+                })
+                .select('*, category:categories(*)')
+                .single();
+
+            if (error) throw error;
+            return data as Budget;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.budgets });
+            queryClient.invalidateQueries({ queryKey: queryKeys.categoryBudgets });
+            toast.success('Budget created successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to create budget', { description: error.message });
+        },
+    });
+}
+
+export function useUpdateBudget() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ id, updates }: { id: string; updates: { amount?: number; period?: 'monthly' | 'yearly' } }) => {
+            const { data, error } = await supabase
+                .from('category_budgets')
+                .update({ ...updates, updated_at: new Date().toISOString() })
+                .eq('id', id)
+                .select('*, category:categories(*)')
+                .single();
+
+            if (error) throw error;
+            return data as Budget;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.budgets });
+            queryClient.invalidateQueries({ queryKey: queryKeys.categoryBudgets });
+            toast.success('Budget updated successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to update budget', { description: error.message });
+        },
+    });
+}
+
+export function useDeleteBudget() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (id: string) => {
+            const { error } = await supabase
+                .from('category_budgets')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+            return id;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.budgets });
+            queryClient.invalidateQueries({ queryKey: queryKeys.categoryBudgets });
+            toast.success('Budget deleted successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to delete budget', { description: error.message });
+        },
+    });
+}
+
+export function useBudgetSpending(categoryId: string, period: 'monthly' | 'yearly') {
+    return useQuery<{ spent: number; budget: Budget | null }>({
+        queryKey: ['budgetSpending', categoryId, period],
+        queryFn: async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            // Get the budget
+            const { data: budget, error: budgetError } = await supabase
+                .from('category_budgets')
+                .select('*, category:categories(*)')
+                .eq('user_id', user.id)
+                .eq('category_id', categoryId)
+                .eq('period', period)
+                .single();
+
+            if (budgetError && budgetError.code !== 'PGRST116') throw budgetError;
+
+            // Calculate date range based on period
+            const now = new Date();
+            let startDate: string;
+            let endDate: string;
+
+            if (period === 'monthly') {
+                // Current month
+                startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+                endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+            } else {
+                // Current year
+                startDate = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0];
+                endDate = new Date(now.getFullYear(), 11, 31).toISOString().split('T')[0];
+            }
+
+            // Get total spending for this category in the period
+            const { data: transactions, error: transError } = await supabase
+                .from('transactions')
+                .select('amount')
+                .eq('user_id', user.id)
+                .eq('category_id', categoryId)
+                .eq('type', 'expense')
+                .gte('date', startDate)
+                .lte('date', endDate);
+
+            if (transError) throw transError;
+
+            const spent = transactions?.reduce((sum, t) => sum + t.amount, 0) || 0;
+
+            return {
+                spent,
+                budget: budget as Budget | null,
+            };
+        },
+        staleTime: 2 * 60 * 1000, // 2 minutes
+        enabled: !!categoryId,
+    });
+}
+
+export function useBudgetsWithSpending() {
+    const { data: budgets } = useBudgets();
+    const { data: transactions } = useTransactions();
+
+    return useQuery<BudgetWithSpending[]>({
+        queryKey: ['budgetsWithSpending', budgets, transactions],
+        queryFn: async () => {
+            if (!budgets || !transactions) return [];
+
+            const now = new Date();
+
+            return budgets.map((budget) => {
+                // Calculate date range based on period
+                let startDate: Date;
+                let endDate: Date;
+
+                if (budget.period === 'monthly') {
+                    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                    endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                } else {
+                    startDate = new Date(now.getFullYear(), 0, 1);
+                    endDate = new Date(now.getFullYear(), 11, 31);
+                }
+
+                // Calculate spending for this category in the period
+                const spent = transactions
+                    .filter((t) => {
+                        const transDate = new Date(t.date);
+                        return (
+                            t.category_id === budget.category_id &&
+                            t.type === 'expense' &&
+                            transDate >= startDate &&
+                            transDate <= endDate
+                        );
+                    })
+                    .reduce((sum, t) => sum + t.amount, 0);
+
+                const remaining = Math.max(0, budget.amount - spent);
+                const percentage = budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
+
+                let status: 'safe' | 'warning' | 'exceeded';
+                if (percentage >= 100) {
+                    status = 'exceeded';
+                } else if (percentage >= 80) {
+                    status = 'warning';
+                } else {
+                    status = 'safe';
+                }
+
+                return {
+                    ...budget,
+                    spent,
+                    remaining,
+                    percentage,
+                    status,
+                };
+            });
+        },
+        enabled: !!budgets && !!transactions,
+        staleTime: 2 * 60 * 1000, // 2 minutes
     });
 }

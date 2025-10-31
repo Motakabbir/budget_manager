@@ -9,6 +9,11 @@ import DashboardLayout from '@/pages/DashboardLayout';
 
 // Lazy load pages (loaded on demand)
 const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
+const BankAccountsPage = lazy(() => import('@/pages/BankAccountsPage'));
+const CardsPage = lazy(() => import('@/pages/CardsPage'));
+const LoansPage = lazy(() => import('@/pages/LoansPage'));
+const RecurringTransactionsPage = lazy(() => import('@/pages/RecurringTransactionsPage'));
+const BudgetsPage = lazy(() => import('@/pages/BudgetsPage'));
 const IncomePage = lazy(() => import('@/pages/IncomePage'));
 const ExpensesPage = lazy(() => import('@/pages/ExpensesPage'));
 const CategoriesPage = lazy(() => import('@/pages/CategoriesPage'));
@@ -50,6 +55,46 @@ function App() {
                     element={
                         <Suspense fallback={<DashboardSkeleton />}>
                             <DashboardPage />
+                        </Suspense>
+                    }
+                />
+                <Route
+                    path="bank-accounts"
+                    element={
+                        <Suspense fallback={<DashboardSkeleton />}>
+                            <BankAccountsPage />
+                        </Suspense>
+                    }
+                />
+                <Route
+                    path="cards"
+                    element={
+                        <Suspense fallback={<DashboardSkeleton />}>
+                            <CardsPage />
+                        </Suspense>
+                    }
+                />
+                <Route
+                    path="loans"
+                    element={
+                        <Suspense fallback={<DashboardSkeleton />}>
+                            <LoansPage />
+                        </Suspense>
+                    }
+                />
+                <Route
+                    path="recurring"
+                    element={
+                        <Suspense fallback={<DashboardSkeleton />}>
+                            <RecurringTransactionsPage />
+                        </Suspense>
+                    }
+                />
+                <Route
+                    path="budgets"
+                    element={
+                        <Suspense fallback={<DashboardSkeleton />}>
+                            <BudgetsPage />
                         </Suspense>
                     }
                 />

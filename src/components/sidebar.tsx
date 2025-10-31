@@ -9,13 +9,24 @@ import {
     Settings,
     LogOut,
     X,
+    Building2,
+    CreditCard,
+    HandCoins,
+    RefreshCw,
+    PieChart,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
+import { BudgetAlertBadge } from '@/components/budgets';
 
 const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    { name: 'Bank Accounts', href: '/bank-accounts', icon: Building2 },
+    { name: 'Cards', href: '/cards', icon: CreditCard },
+    { name: 'Loans', href: '/loans', icon: HandCoins },
+    { name: 'Recurring', href: '/recurring', icon: RefreshCw },
+    { name: 'Budgets', href: '/budgets', icon: PieChart },
     { name: 'Categories', href: '/categories', icon: Tag },
     { name: 'Income', href: '/income', icon: TrendingUp },
     { name: 'Expenses', href: '/expenses', icon: TrendingDown },
@@ -112,6 +123,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                                 >
                                     <Icon className="h-5 w-5 shrink-0" />
                                     <span>{item.name}</span>
+                                    {item.name === 'Budgets' && <BudgetAlertBadge />}
                                 </Link>
                             );
                         })}
