@@ -9,6 +9,8 @@ import {
     Settings,
     LogOut,
     X,
+    Building2,
+    CreditCard,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
@@ -16,6 +18,8 @@ import { supabase } from '@/lib/supabase/client';
 
 const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    { name: 'Bank Accounts', href: '/bank-accounts', icon: Building2 },
+    { name: 'Cards', href: '/cards', icon: CreditCard },
     { name: 'Categories', href: '/categories', icon: Tag },
     { name: 'Income', href: '/income', icon: TrendingUp },
     { name: 'Expenses', href: '/expenses', icon: TrendingDown },

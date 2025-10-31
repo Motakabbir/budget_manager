@@ -26,7 +26,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { useTransactions, useCategories, useAddTransaction, useUpdateTransaction, useDeleteTransaction, useAddCategory } from '@/lib/hooks/use-budget-queries';
+import { useTransactions, useCategories, useAddTransaction, useUpdateTransaction, useDeleteTransaction, useAddCategory, useBankAccounts, usePaymentCards } from '@/lib/hooks/use-budget-queries';
 import { TransactionListSkeleton } from '@/components/loading/LoadingSkeletons';
 import { Plus, Pencil, Trash2, Download, CalendarIcon, PlusCircle, TrendingDown, Filter } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
@@ -77,27 +77,40 @@ export default function ExpensesPage() {
     // React Query hooks
     const { data: transactions = [], isLoading: transactionsLoading } = useTransactions() as { data: Transaction[], isLoading: boolean };
     const { data: categories = [], isLoading: categoriesLoading } = useCategories() as { data: Category[], isLoading: boolean };
+    const { data: bankAccounts = [], isLoading: accountsLoading } = useBankAccounts();
+    const { data: paymentCards = [], isLoading: cardsLoading } = usePaymentCards();
     const addTransactionMutation = useAddTransaction();
     const updateTransactionMutation = useUpdateTransaction();
     const deleteTransactionMutation = useDeleteTransaction();
     const addCategoryMutation = useAddCategory();
 
-    const loading = transactionsLoading || categoriesLoading;
+    const loading = transactionsLoading || categoriesLoading || accountsLoading || cardsLoading;
 
     const [isOpen, setIsOpen] = useState(false);
     const [showNewCategory, setShowNewCategory] = useState(false);
     const [editingTransaction, setEditingTransaction] = useState<any>(null);
     const [selectedMonth, setSelectedMonth] = useState<string>('all');
-    const [formData, setFormData] = useState({
+
+    // Default form state
+    const defaultFormState = {
         category_id: '',
         amount: '',
         description: '',
         date: new Date(),
-    });
+        payment_method: 'cash' as 'cash' | 'card' | 'bank_account' | 'other',
+        card_id: '',
+        account_id: '',
+    };
+
+    const [formData, setFormData] = useState(defaultFormState);
     const [newCategoryData, setNewCategoryData] = useState({
         name: '',
         color: '#ef4444',
     });
+
+    // Filter active accounts and cards
+    const activeAccounts = bankAccounts.filter((acc: any) => acc.is_active);
+    const activeCards = paymentCards.filter((card: any) => card.is_active);
 
     // Generate last 12 months for filter
     const monthOptions = Array.from({ length: 12 }, (_, i) => {
@@ -152,6 +165,9 @@ export default function ExpensesPage() {
             description: formData.description || null,
             date: format(formData.date, 'yyyy-MM-dd'),
             type: 'expense' as const,
+            payment_method: formData.payment_method || null,
+            card_id: formData.payment_method === 'card' ? (formData.card_id || null) : null,
+            account_id: formData.payment_method === 'bank_account' ? (formData.account_id || null) : null,
         };
 
         if (editingTransaction) {
@@ -165,7 +181,7 @@ export default function ExpensesPage() {
 
         setIsOpen(false);
         setEditingTransaction(null);
-        setFormData({ category_id: '', amount: '', description: '', date: new Date() });
+        setFormData(defaultFormState);
     };
 
     const handleCreateCategory = async () => {
@@ -191,6 +207,9 @@ export default function ExpensesPage() {
             amount: transaction.amount.toString(),
             description: transaction.description || '',
             date: new Date(transaction.date),
+            payment_method: transaction.payment_method || 'cash',
+            card_id: transaction.card_id || '',
+            account_id: transaction.account_id || '',
         });
         setIsOpen(true);
     };
@@ -245,7 +264,7 @@ export default function ExpensesPage() {
                         <DialogTrigger asChild>
                             <Button onClick={() => {
                                 setEditingTransaction(null);
-                                setFormData({ category_id: '', amount: '', description: '', date: new Date() });
+                                setFormData(defaultFormState);
                                 setShowNewCategory(false);
                             }} className="flex-1 sm:flex-none bg-linear-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700">
                                 <Plus className="mr-2 h-4 w-4" />
@@ -382,6 +401,88 @@ export default function ExpensesPage() {
                                         </PopoverContent>
                                     </Popover>
                                 </div>
+
+                                {/* Payment Method */}
+                                <div className="space-y-2">
+                                    <Label htmlFor="payment_method">Payment Method</Label>
+                                    <Select
+                                        value={formData.payment_method}
+                                        onValueChange={(value: 'cash' | 'card' | 'bank_account' | 'other') =>
+                                            setFormData({ ...formData, payment_method: value, card_id: '', account_id: '' })
+                                        }
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="cash">Cash</SelectItem>
+                                            <SelectItem value="card">Credit/Debit Card</SelectItem>
+                                            <SelectItem value="bank_account">Bank Account</SelectItem>
+                                            <SelectItem value="other">Other</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                {/* Card Selection (if card payment) */}
+                                {formData.payment_method === 'card' && (
+                                    <div className="space-y-2">
+                                        <Label htmlFor="card_id">Select Card</Label>
+                                        <Select
+                                            value={formData.card_id}
+                                            onValueChange={(value) =>
+                                                setFormData({ ...formData, card_id: value })
+                                            }
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Choose a card" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {activeCards.length === 0 ? (
+                                                    <div className="p-2 text-sm text-muted-foreground">
+                                                        No cards available. Add a card first.
+                                                    </div>
+                                                ) : (
+                                                    activeCards.map((card: any) => (
+                                                        <SelectItem key={card.id} value={card.id}>
+                                                            {card.card_name} {card.last_four_digits && `(••••${card.last_four_digits})`}
+                                                        </SelectItem>
+                                                    ))
+                                                )}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                )}
+
+                                {/* Bank Account Selection (if bank account payment) */}
+                                {formData.payment_method === 'bank_account' && (
+                                    <div className="space-y-2">
+                                        <Label htmlFor="account_id">Select Account</Label>
+                                        <Select
+                                            value={formData.account_id}
+                                            onValueChange={(value) =>
+                                                setFormData({ ...formData, account_id: value })
+                                            }
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Choose an account" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {activeAccounts.length === 0 ? (
+                                                    <div className="p-2 text-sm text-muted-foreground">
+                                                        No accounts available. Add an account first.
+                                                    </div>
+                                                ) : (
+                                                    activeAccounts.map((account: any) => (
+                                                        <SelectItem key={account.id} value={account.id}>
+                                                            {account.account_name} (${(account.balance || 0).toFixed(2)})
+                                                        </SelectItem>
+                                                    ))
+                                                )}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                )}
+
                                 <div>
                                     <Label htmlFor="description">Description (Optional)</Label>
                                     <Input

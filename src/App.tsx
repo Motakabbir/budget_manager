@@ -9,6 +9,8 @@ import DashboardLayout from '@/pages/DashboardLayout';
 
 // Lazy load pages (loaded on demand)
 const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
+const BankAccountsPage = lazy(() => import('@/pages/BankAccountsPage'));
+const CardsPage = lazy(() => import('@/pages/CardsPage'));
 const IncomePage = lazy(() => import('@/pages/IncomePage'));
 const ExpensesPage = lazy(() => import('@/pages/ExpensesPage'));
 const CategoriesPage = lazy(() => import('@/pages/CategoriesPage'));
@@ -50,6 +52,22 @@ function App() {
                     element={
                         <Suspense fallback={<DashboardSkeleton />}>
                             <DashboardPage />
+                        </Suspense>
+                    }
+                />
+                <Route
+                    path="bank-accounts"
+                    element={
+                        <Suspense fallback={<DashboardSkeleton />}>
+                            <BankAccountsPage />
+                        </Suspense>
+                    }
+                />
+                <Route
+                    path="cards"
+                    element={
+                        <Suspense fallback={<DashboardSkeleton />}>
+                            <CardsPage />
                         </Suspense>
                     }
                 />

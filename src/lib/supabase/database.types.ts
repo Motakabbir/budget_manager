@@ -78,6 +78,9 @@ export type Database = {
                     description: string | null
                     date: string
                     type: 'income' | 'expense'
+                    account_id: string | null
+                    card_id: string | null
+                    payment_method: string | null
                     created_at: string
                     updated_at: string
                 }
@@ -89,6 +92,9 @@ export type Database = {
                     description?: string | null
                     date: string
                     type: 'income' | 'expense'
+                    account_id?: string | null
+                    card_id?: string | null
+                    payment_method?: string | null
                     created_at?: string
                     updated_at?: string
                 }
@@ -100,6 +106,9 @@ export type Database = {
                     description?: string | null
                     date?: string
                     type?: 'income' | 'expense'
+                    account_id?: string | null
+                    card_id?: string | null
+                    payment_method?: string | null
                     created_at?: string
                     updated_at?: string
                 }
@@ -340,12 +349,280 @@ export type Database = {
                 }
                 Relationships: []
             }
+            bank_accounts: {
+                Row: {
+                    id: string
+                    user_id: string
+                    account_name: string
+                    bank_name: string | null
+                    account_type: 'checking' | 'savings' | 'investment' | 'cash' | 'wallet' | 'other'
+                    account_number: string | null
+                    balance: number
+                    currency: string
+                    color: string
+                    icon: string | null
+                    is_active: boolean
+                    notes: string | null
+                    created_at: string
+                    updated_at: string
+                }
+                Insert: {
+                    id?: string
+                    user_id: string
+                    account_name: string
+                    bank_name?: string | null
+                    account_type: 'checking' | 'savings' | 'investment' | 'cash' | 'wallet' | 'other'
+                    account_number?: string | null
+                    balance?: number
+                    currency?: string
+                    color?: string
+                    icon?: string | null
+                    is_active?: boolean
+                    notes?: string | null
+                    created_at?: string
+                    updated_at?: string
+                }
+                Update: {
+                    id?: string
+                    user_id?: string
+                    account_name?: string
+                    bank_name?: string | null
+                    account_type?: 'checking' | 'savings' | 'investment' | 'cash' | 'wallet' | 'other'
+                    account_number?: string | null
+                    balance?: number
+                    currency?: string
+                    color?: string
+                    icon?: string | null
+                    is_active?: boolean
+                    notes?: string | null
+                    created_at?: string
+                    updated_at?: string
+                }
+                Relationships: []
+            }
+            account_transfers: {
+                Row: {
+                    id: string
+                    user_id: string
+                    from_account_id: string
+                    to_account_id: string
+                    amount: number
+                    transfer_fee: number
+                    description: string | null
+                    date: string
+                    created_at: string
+                    updated_at: string
+                }
+                Insert: {
+                    id?: string
+                    user_id: string
+                    from_account_id: string
+                    to_account_id: string
+                    amount: number
+                    transfer_fee?: number
+                    description?: string | null
+                    date?: string
+                    created_at?: string
+                    updated_at?: string
+                }
+                Update: {
+                    id?: string
+                    user_id?: string
+                    from_account_id?: string
+                    to_account_id?: string
+                    amount?: number
+                    transfer_fee?: number
+                    description?: string | null
+                    date?: string
+                    created_at?: string
+                    updated_at?: string
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "account_transfers_from_account_id_fkey"
+                        columns: ["from_account_id"]
+                        referencedRelation: "bank_accounts"
+                        referencedColumns: ["id"]
+                    },
+                    {
+                        foreignKeyName: "account_transfers_to_account_id_fkey"
+                        columns: ["to_account_id"]
+                        referencedRelation: "bank_accounts"
+                        referencedColumns: ["id"]
+                    }
+                ]
+            }
+            payment_cards: {
+                Row: {
+                    id: string
+                    user_id: string
+                    card_name: string
+                    card_type: 'debit' | 'credit'
+                    card_network: string | null
+                    last_four_digits: string | null
+                    bank_account_id: string | null
+                    credit_limit: number | null
+                    current_balance: number
+                    available_credit: number | null
+                    interest_rate: number | null
+                    billing_cycle_day: number | null
+                    payment_due_day: number | null
+                    minimum_payment_percent: number | null
+                    expiry_date: string | null
+                    cardholder_name: string | null
+                    color: string
+                    icon: string | null
+                    is_active: boolean
+                    notes: string | null
+                    created_at: string
+                    updated_at: string
+                }
+                Insert: {
+                    id?: string
+                    user_id: string
+                    card_name: string
+                    card_type: 'debit' | 'credit'
+                    card_network?: string | null
+                    last_four_digits?: string | null
+                    bank_account_id?: string | null
+                    credit_limit?: number | null
+                    current_balance?: number
+                    available_credit?: number | null
+                    interest_rate?: number | null
+                    billing_cycle_day?: number | null
+                    payment_due_day?: number | null
+                    minimum_payment_percent?: number | null
+                    expiry_date?: string | null
+                    cardholder_name?: string | null
+                    color?: string
+                    icon?: string | null
+                    is_active?: boolean
+                    notes?: string | null
+                    created_at?: string
+                    updated_at?: string
+                }
+                Update: {
+                    id?: string
+                    user_id?: string
+                    card_name?: string
+                    card_type?: 'debit' | 'credit'
+                    card_network?: string | null
+                    last_four_digits?: string | null
+                    bank_account_id?: string | null
+                    credit_limit?: number | null
+                    current_balance?: number
+                    available_credit?: number | null
+                    interest_rate?: number | null
+                    billing_cycle_day?: number | null
+                    payment_due_day?: number | null
+                    minimum_payment_percent?: number | null
+                    expiry_date?: string | null
+                    cardholder_name?: string | null
+                    color?: string
+                    icon?: string | null
+                    is_active?: boolean
+                    notes?: string | null
+                    created_at?: string
+                    updated_at?: string
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "payment_cards_bank_account_id_fkey"
+                        columns: ["bank_account_id"]
+                        referencedRelation: "bank_accounts"
+                        referencedColumns: ["id"]
+                    }
+                ]
+            }
+            card_payments: {
+                Row: {
+                    id: string
+                    user_id: string
+                    card_id: string
+                    payment_amount: number
+                    payment_date: string
+                    payment_method: string | null
+                    from_account_id: string | null
+                    notes: string | null
+                    created_at: string
+                    updated_at: string
+                }
+                Insert: {
+                    id?: string
+                    user_id: string
+                    card_id: string
+                    payment_amount: number
+                    payment_date?: string
+                    payment_method?: string | null
+                    from_account_id?: string | null
+                    notes?: string | null
+                    created_at?: string
+                    updated_at?: string
+                }
+                Update: {
+                    id?: string
+                    user_id?: string
+                    card_id?: string
+                    payment_amount?: number
+                    payment_date?: string
+                    payment_method?: string | null
+                    from_account_id?: string | null
+                    notes?: string | null
+                    created_at?: string
+                    updated_at?: string
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "card_payments_card_id_fkey"
+                        columns: ["card_id"]
+                        referencedRelation: "payment_cards"
+                        referencedColumns: ["id"]
+                    },
+                    {
+                        foreignKeyName: "card_payments_from_account_id_fkey"
+                        columns: ["from_account_id"]
+                        referencedRelation: "bank_accounts"
+                        referencedColumns: ["id"]
+                    }
+                ]
+            }
         }
         Views: {
             [_ in never]: never
         }
         Functions: {
-            [_ in never]: never
+            transfer_between_accounts: {
+                Args: {
+                    p_user_id: string
+                    p_from_account_id: string
+                    p_to_account_id: string
+                    p_amount: number
+                    p_transfer_fee?: number
+                    p_description?: string
+                    p_date?: string
+                }
+                Returns: string
+            }
+            make_card_payment: {
+                Args: {
+                    p_user_id: string
+                    p_card_id: string
+                    p_payment_amount: number
+                    p_from_account_id?: string
+                    p_payment_method?: string
+                    p_payment_date?: string
+                    p_notes?: string
+                }
+                Returns: string
+            }
+            charge_credit_card: {
+                Args: {
+                    p_user_id: string
+                    p_card_id: string
+                    p_charge_amount: number
+                }
+                Returns: boolean
+            }
         }
         Enums: {
             [_ in never]: never
