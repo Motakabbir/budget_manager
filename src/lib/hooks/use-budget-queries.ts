@@ -3,6 +3,13 @@ import { supabase } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 import { transactionSchema, categorySchema, savingsGoalSchema, categoryBudgetSchema, userSettingsSchema } from '@/lib/validations/schemas';
 import type { TransactionInput, CategoryInput, SavingsGoalInput, CategoryBudgetInput, UserSettingsInput } from '@/lib/validations/schemas';
+import type {
+    EnhancedSavingsGoal,
+    CreateGoalParams,
+    UpdateGoalParams,
+    AddContributionParams,
+    GoalAnalytics
+} from '@/lib/supabase/database.types';
 
 // ============= TYPES =============
 
@@ -529,6 +536,243 @@ export function useDeleteSavingsGoal() {
         },
     });
 }
+
+// ============= ENHANCED SAVINGS GOALS (NEW) =============
+
+export function useEnhancedSavingsGoals() {
+    return useQuery<EnhancedSavingsGoal[]>({
+        queryKey: [...queryKeys.savingsGoals, 'enhanced'],
+        queryFn: async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { data, error } = await supabase
+                .from('savings_goals')
+                .select(`
+                    *,
+                    goal_milestones (*),
+                    goal_contributions (*)
+                `)
+                .eq('user_id', user.id)
+                .order('priority', { ascending: false })
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+            return data as EnhancedSavingsGoal[];
+        },
+    });
+}
+
+export function useCreateEnhancedSavingsGoal() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (input: CreateGoalParams) => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            // Create the goal
+            const { data: goal, error: goalError } = await supabase
+                .from('savings_goals')
+                .insert({
+                    user_id: user.id,
+                    name: input.name,
+                    target_amount: input.target_amount,
+                    deadline: input.deadline,
+                    goal_type: input.goal_type || 'custom',
+                    priority: input.priority || 5,
+                    auto_contribution_enabled: input.auto_contribution_enabled || false,
+                    auto_contribution_amount: input.auto_contribution_amount || 0,
+                    auto_contribution_frequency: input.auto_contribution_frequency || 'monthly',
+                    description: input.description,
+                    target_date: input.target_date,
+                    current_amount: 0
+                })
+                .select()
+                .single();
+
+            if (goalError) throw goalError;
+
+            // Create default milestones manually
+            const milestones = [
+                { goal_id: goal.id, milestone_name: '25% Complete', milestone_percentage: 25, target_amount: goal.target_amount * 0.25 },
+                { goal_id: goal.id, milestone_name: '50% Complete', milestone_percentage: 50, target_amount: goal.target_amount * 0.50 },
+                { goal_id: goal.id, milestone_name: '75% Complete', milestone_percentage: 75, target_amount: goal.target_amount * 0.75 },
+                { goal_id: goal.id, milestone_name: 'Goal Achieved!', milestone_percentage: 100, target_amount: goal.target_amount }
+            ];
+
+            const { error: milestonesError } = await supabase
+                .from('goal_milestones')
+                .insert(milestones);
+
+            if (milestonesError) throw milestonesError;
+
+            return goal;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.savingsGoals });
+            toast.success('Enhanced savings goal created successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to create savings goal', { description: error.message });
+        },
+    });
+}
+
+export function useUpdateEnhancedSavingsGoal() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ id, updates }: { id: string; updates: UpdateGoalParams }) => {
+            const { data, error } = await supabase
+                .from('savings_goals')
+                .update(updates)
+                .eq('id', id)
+                .select()
+                .single();
+
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.savingsGoals });
+            toast.success('Savings goal updated successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to update savings goal', { description: error.message });
+        },
+    });
+}
+
+// ============= GOAL MILESTONES =============
+
+export function useGoalMilestones(goalId: string) {
+    return useQuery({
+        queryKey: [...queryKeys.savingsGoals, 'milestones', goalId],
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from('goal_milestones')
+                .select('*')
+                .eq('goal_id', goalId)
+                .order('milestone_percentage', { ascending: true });
+
+            if (error) throw error;
+            return data;
+        },
+        enabled: !!goalId,
+    });
+}
+
+export function useCreateGoalMilestone() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (input: {
+            goal_id: string;
+            milestone_name: string;
+            milestone_percentage: number;
+            target_amount: number;
+        }) => {
+            const { data, error } = await supabase
+                .from('goal_milestones')
+                .insert(input)
+                .select()
+                .single();
+
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({
+                queryKey: [...queryKeys.savingsGoals, 'milestones', variables.goal_id]
+            });
+            queryClient.invalidateQueries({ queryKey: queryKeys.savingsGoals });
+            toast.success('Milestone created successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to create milestone', { description: error.message });
+        },
+    });
+}
+
+// ============= GOAL CONTRIBUTIONS =============
+
+export function useGoalContributions(goalId: string) {
+    return useQuery({
+        queryKey: [...queryKeys.savingsGoals, 'contributions', goalId],
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from('goal_contributions')
+                .select('*')
+                .eq('goal_id', goalId)
+                .order('contribution_date', { ascending: false });
+
+            if (error) throw error;
+            return data;
+        },
+        enabled: !!goalId,
+    });
+}
+
+export function useAddGoalContribution() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (input: AddContributionParams) => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            // Add contribution
+            const { data: contribution, error: contributionError } = await supabase
+                .from('goal_contributions')
+                .insert({
+                    goal_id: input.goal_id,
+                    amount: input.amount,
+                    contribution_date: input.contribution_date || new Date().toISOString().split('T')[0],
+                    source: input.source,
+                    notes: input.notes
+                })
+                .select()
+                .single();
+
+            if (contributionError) throw contributionError;
+
+            // Update goal current amount
+            // First get current amount, then update
+            const { data: currentGoal } = await supabase
+                .from('savings_goals')
+                .select('current_amount')
+                .eq('id', input.goal_id)
+                .single();
+
+            if (currentGoal) {
+                const { error: updateError } = await supabase
+                    .from('savings_goals')
+                    .update({
+                        current_amount: currentGoal.current_amount + input.amount
+                    })
+                    .eq('id', input.goal_id);
+
+                if (updateError) throw updateError;
+            }
+
+            return contribution;
+        },
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({
+                queryKey: [...queryKeys.savingsGoals, 'contributions', variables.goal_id]
+            });
+            queryClient.invalidateQueries({ queryKey: queryKeys.savingsGoals });
+            toast.success('Contribution added successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to add contribution', { description: error.message });
+        },
+    });
+}
+
+// ============= GOAL ANALYTICS =============
+// Analytics are handled by the useGoalAnalytics hook in useGoalAnalytics.ts
 
 // ============= USER SETTINGS =============
 
@@ -1656,5 +1900,65 @@ export function useBudgetsWithSpending() {
         },
         enabled: !!budgets && !!transactions,
         staleTime: 2 * 60 * 1000, // 2 minutes
+    });
+}
+
+// ============= AUTO-CONTRIBUTION SYSTEM =============
+
+export function useProcessAutoContributions() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { processAutoContributions } = await import('@/lib/auto-contribution');
+            return processAutoContributions(user.id);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.savingsGoals });
+            queryClient.invalidateQueries({ queryKey: [...queryKeys.savingsGoals, 'contributions'] });
+            toast.success('Auto-contributions processed successfully');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to process auto-contributions', { description: error.message });
+        },
+    });
+}
+
+export function useGetAutoContributionSchedule() {
+    return useQuery({
+        queryKey: [...queryKeys.savingsGoals, 'auto-contribution-schedule'],
+        queryFn: async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { getAutoContributionSchedule } = await import('@/lib/auto-contribution');
+            return getAutoContributionSchedule(user.id);
+        },
+        staleTime: 5 * 60 * 1000, // 5 minutes
+    });
+}
+
+export function useProcessAutoContributionOnIncome() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (incomeAmount: number) => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { processAutoContributionsOnIncome } = await import('@/lib/auto-contribution');
+            return processAutoContributionsOnIncome(user.id, incomeAmount);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.savingsGoals });
+            queryClient.invalidateQueries({ queryKey: [...queryKeys.savingsGoals, 'contributions'] });
+            toast.success('Auto-contributions processed for new income');
+        },
+        onError: (error: Error) => {
+            toast.error('Failed to process auto-contributions for income', { description: error.message });
+        },
     });
 }

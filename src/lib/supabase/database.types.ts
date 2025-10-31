@@ -133,6 +133,13 @@ export type Database = {
                     target_amount: number
                     current_amount: number
                     deadline: string | null
+                    goal_type: 'emergency_fund' | 'vacation_fund' | 'house_down_payment' | 'retirement_planning' | 'debt_free_goal' | 'car_purchase' | 'custom'
+                    priority: number
+                    auto_contribution_enabled: boolean
+                    auto_contribution_amount: number
+                    auto_contribution_frequency: 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly'
+                    description: string | null
+                    target_date: string | null
                     created_at: string
                     updated_at: string
                 }
@@ -143,6 +150,13 @@ export type Database = {
                     target_amount: number
                     current_amount?: number
                     deadline?: string | null
+                    goal_type?: 'emergency_fund' | 'vacation_fund' | 'house_down_payment' | 'retirement_planning' | 'debt_free_goal' | 'car_purchase' | 'custom'
+                    priority?: number
+                    auto_contribution_enabled?: boolean
+                    auto_contribution_amount?: number
+                    auto_contribution_frequency?: 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly'
+                    description?: string | null
+                    target_date?: string | null
                     created_at?: string
                     updated_at?: string
                 }
@@ -153,6 +167,13 @@ export type Database = {
                     target_amount?: number
                     current_amount?: number
                     deadline?: string | null
+                    goal_type?: 'emergency_fund' | 'vacation_fund' | 'house_down_payment' | 'retirement_planning' | 'debt_free_goal' | 'car_purchase' | 'custom'
+                    priority?: number
+                    auto_contribution_enabled?: boolean
+                    auto_contribution_amount?: number
+                    auto_contribution_frequency?: 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly'
+                    description?: string | null
+                    target_date?: string | null
                     created_at?: string
                     updated_at?: string
                 }
@@ -772,6 +793,88 @@ export type Database = {
                     }
                 ]
             }
+            goal_milestones: {
+                Row: {
+                    id: string
+                    goal_id: string
+                    milestone_name: string
+                    milestone_percentage: number
+                    target_amount: number
+                    is_achieved: boolean
+                    achieved_date: string | null
+                    created_at: string
+                    updated_at: string
+                }
+                Insert: {
+                    id?: string
+                    goal_id: string
+                    milestone_name: string
+                    milestone_percentage: number
+                    target_amount: number
+                    is_achieved?: boolean
+                    achieved_date?: string | null
+                    created_at?: string
+                    updated_at?: string
+                }
+                Update: {
+                    id?: string
+                    goal_id?: string
+                    milestone_name?: string
+                    milestone_percentage?: number
+                    target_amount?: number
+                    is_achieved?: boolean
+                    achieved_date?: string | null
+                    created_at?: string
+                    updated_at?: string
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "goal_milestones_goal_id_fkey"
+                        columns: ["goal_id"]
+                        isOneToOne: false
+                        referencedRelation: "savings_goals"
+                        referencedColumns: ["id"]
+                    }
+                ]
+            }
+            goal_contributions: {
+                Row: {
+                    id: string
+                    goal_id: string
+                    amount: number
+                    contribution_date: string
+                    source: string | null
+                    notes: string | null
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    goal_id: string
+                    amount: number
+                    contribution_date?: string
+                    source?: string | null
+                    notes?: string | null
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    goal_id?: string
+                    amount?: number
+                    contribution_date?: string
+                    source?: string | null
+                    notes?: string | null
+                    created_at?: string
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "goal_contributions_goal_id_fkey"
+                        columns: ["goal_id"]
+                        isOneToOne: false
+                        referencedRelation: "savings_goals"
+                        referencedColumns: ["id"]
+                    }
+                ]
+            }
         }
         Views: {
             [_ in never]: never
@@ -1140,4 +1243,125 @@ export interface ExpiringCoverage {
     coverage_type: 'insurance' | 'warranty';
     expiry_date: string;
     days_until_expiry: number;
+}
+
+// ============================================================================
+// FINANCIAL GOALS & MILESTONES TYPES
+// ============================================================================
+
+export type GoalType = 'emergency_fund' | 'vacation_fund' | 'house_down_payment' | 'retirement_planning' | 'debt_free_goal' | 'car_purchase' | 'custom';
+
+export type ContributionFrequency = 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly';
+
+export interface GoalMilestone {
+    id: string;
+    goal_id: string;
+    milestone_name: string;
+    milestone_percentage: number;
+    target_amount: number;
+    is_achieved: boolean;
+    achieved_date: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface GoalContribution {
+    id: string;
+    goal_id: string;
+    amount: number;
+    contribution_date: string;
+    source: 'manual' | 'auto' | 'income_percentage' | null;
+    notes: string | null;
+    created_at: string;
+}
+
+export interface EnhancedSavingsGoal {
+    id: string;
+    user_id: string;
+    name: string;
+    target_amount: number;
+    current_amount: number;
+    deadline: string | null;
+    goal_type: GoalType;
+    priority: number;
+    auto_contribution_enabled: boolean;
+    auto_contribution_amount: number;
+    auto_contribution_frequency: ContributionFrequency;
+    description: string | null;
+    target_date: string | null;
+    created_at: string;
+    updated_at: string;
+    // Computed fields
+    progress_percentage?: number;
+    remaining_amount?: number;
+    months_to_goal?: number;
+    monthly_savings_needed?: number;
+    days_remaining?: number;
+    milestones?: GoalMilestone[];
+    recent_contributions?: GoalContribution[];
+}
+
+export interface GoalAnalytics {
+    remaining_amount: number;
+    months_to_goal: number | null;
+    monthly_savings_needed: number | null;
+    progress_percentage: number;
+    days_remaining: number | null;
+    is_on_track: boolean;
+    suggested_adjustments: string[];
+}
+
+export interface GoalTypeConfig {
+    type: GoalType;
+    label: string;
+    description: string;
+    icon: string;
+    default_target_amount: number;
+    recommended_timeframe_months: number;
+    priority: number;
+}
+
+export interface CreateGoalParams {
+    name: string;
+    target_amount: number;
+    deadline?: string;
+    goal_type?: GoalType;
+    priority?: number;
+    auto_contribution_enabled?: boolean;
+    auto_contribution_amount?: number;
+    auto_contribution_frequency?: ContributionFrequency;
+    description?: string;
+    target_date?: string;
+}
+
+export interface UpdateGoalParams {
+    name?: string;
+    target_amount?: number;
+    deadline?: string;
+    goal_type?: GoalType;
+    priority?: number;
+    auto_contribution_enabled?: boolean;
+    auto_contribution_amount?: number;
+    auto_contribution_frequency?: ContributionFrequency;
+    description?: string;
+    target_date?: string;
+}
+
+export interface AddContributionParams {
+    goal_id: string;
+    amount: number;
+    contribution_date?: string;
+    source?: 'manual' | 'auto' | 'income_percentage';
+    notes?: string;
+}
+
+export interface GoalSummary {
+    total_goals: number;
+    active_goals: number;
+    completed_goals: number;
+    total_target_amount: number;
+    total_current_amount: number;
+    overall_progress_percentage: number;
+    goals_on_track: number;
+    goals_behind_schedule: number;
 }

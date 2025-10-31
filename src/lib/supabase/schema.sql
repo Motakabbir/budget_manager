@@ -52,10 +52,48 @@ CREATE TABLE IF NOT EXISTS savings_goals (
     target_amount DECIMAL(10, 2) NOT NULL,
     current_amount DECIMAL(10, 2) NOT NULL DEFAULT 0,
     deadline DATE,
+    goal_type TEXT CHECK (goal_type IN ('emergency_fund', 'vacation_fund', 'house_down_payment', 'retirement_planning', 'debt_free_goal', 'car_purchase', 'custom')) DEFAULT 'custom',
+    priority INTEGER CHECK (priority >= 1 AND priority <= 10) DEFAULT 5,
+    auto_contribution_enabled BOOLEAN DEFAULT false,
+    auto_contribution_amount DECIMAL(10, 2) DEFAULT 0,
+    auto_contribution_frequency TEXT CHECK (auto_contribution_frequency IN ('weekly', 'bi-weekly', 'monthly', 'quarterly')) DEFAULT 'monthly',
+    description TEXT,
+    target_date DATE,
     created_at TIMESTAMP
     WITH
         TIME ZONE DEFAULT NOW(),
         updated_at TIMESTAMP
+    WITH
+        TIME ZONE DEFAULT NOW()
+);
+
+-- Goal milestones table: Tracks progress milestones for savings goals
+CREATE TABLE IF NOT EXISTS goal_milestones (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
+    goal_id UUID NOT NULL REFERENCES savings_goals (id) ON DELETE CASCADE,
+    milestone_name TEXT NOT NULL,
+    milestone_percentage DECIMAL(5, 2) NOT NULL CHECK (milestone_percentage > 0 AND milestone_percentage <= 100),
+    target_amount DECIMAL(10, 2) NOT NULL,
+    is_achieved BOOLEAN DEFAULT false,
+    achieved_date DATE,
+    created_at TIMESTAMP
+    WITH
+        TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP
+    WITH
+        TIME ZONE DEFAULT NOW(),
+        UNIQUE (goal_id, milestone_percentage)
+);
+
+-- Goal contributions table: Tracks individual contributions to savings goals
+CREATE TABLE IF NOT EXISTS goal_contributions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
+    goal_id UUID NOT NULL REFERENCES savings_goals (id) ON DELETE CASCADE,
+    amount DECIMAL(10, 2) NOT NULL CHECK (amount > 0),
+    contribution_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    source TEXT CHECK (source IN ('manual', 'auto', 'income_percentage')),
+    notes TEXT,
+    created_at TIMESTAMP
     WITH
         TIME ZONE DEFAULT NOW()
 );
@@ -138,6 +176,13 @@ CREATE INDEX IF NOT EXISTS idx_transactions_category_id ON transactions (categor
 
 -- Savings goals indexes
 CREATE INDEX IF NOT EXISTS idx_savings_goals_user_id ON savings_goals (user_id);
+CREATE INDEX IF NOT EXISTS idx_savings_goals_goal_type ON savings_goals (goal_type);
+CREATE INDEX IF NOT EXISTS idx_savings_goals_priority ON savings_goals (priority);
+CREATE INDEX IF NOT EXISTS idx_savings_goals_auto_contribution ON savings_goals (auto_contribution_enabled);
+CREATE INDEX IF NOT EXISTS idx_goal_milestones_goal_id ON goal_milestones (goal_id);
+CREATE INDEX IF NOT EXISTS idx_goal_milestones_achieved ON goal_milestones (is_achieved);
+CREATE INDEX IF NOT EXISTS idx_goal_contributions_goal_id ON goal_contributions (goal_id);
+CREATE INDEX IF NOT EXISTS idx_goal_contributions_date ON goal_contributions (contribution_date);
 
 -- User settings indexes
 CREATE INDEX IF NOT EXISTS idx_user_settings_user_id ON user_settings (user_id);
@@ -165,6 +210,8 @@ ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE savings_goals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE goal_milestones ENABLE ROW LEVEL SECURITY;
+ALTER TABLE goal_contributions ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE user_settings ENABLE ROW LEVEL SECURITY;
 
@@ -222,6 +269,84 @@ CREATE POLICY "Users can update own savings goals" ON savings_goals FOR
 UPDATE USING (auth.uid () = user_id);
 
 CREATE POLICY "Users can delete own savings goals" ON savings_goals FOR DELETE USING (auth.uid () = user_id);
+
+-- ============================================================================
+-- RLS POLICIES - GOAL MILESTONES
+-- ============================================================================
+
+CREATE POLICY "Users can view own goal milestones" ON goal_milestones FOR
+SELECT USING (
+    EXISTS (
+        SELECT 1 FROM savings_goals
+        WHERE savings_goals.id = goal_milestones.goal_id
+        AND savings_goals.user_id = auth.uid()
+    )
+);
+
+CREATE POLICY "Users can create own goal milestones" ON goal_milestones FOR
+INSERT WITH CHECK (
+    EXISTS (
+        SELECT 1 FROM savings_goals
+        WHERE savings_goals.id = goal_milestones.goal_id
+        AND savings_goals.user_id = auth.uid()
+    )
+);
+
+CREATE POLICY "Users can update own goal milestones" ON goal_milestones FOR
+UPDATE USING (
+    EXISTS (
+        SELECT 1 FROM savings_goals
+        WHERE savings_goals.id = goal_milestones.goal_id
+        AND savings_goals.user_id = auth.uid()
+    )
+);
+
+CREATE POLICY "Users can delete own goal milestones" ON goal_milestones FOR DELETE USING (
+    EXISTS (
+        SELECT 1 FROM savings_goals
+        WHERE savings_goals.id = goal_milestones.goal_id
+        AND savings_goals.user_id = auth.uid()
+    )
+);
+
+-- ============================================================================
+-- RLS POLICIES - GOAL CONTRIBUTIONS
+-- ============================================================================
+
+CREATE POLICY "Users can view own goal contributions" ON goal_contributions FOR
+SELECT USING (
+    EXISTS (
+        SELECT 1 FROM savings_goals
+        WHERE savings_goals.id = goal_contributions.goal_id
+        AND savings_goals.user_id = auth.uid()
+    )
+);
+
+CREATE POLICY "Users can create own goal contributions" ON goal_contributions FOR
+INSERT WITH CHECK (
+    EXISTS (
+        SELECT 1 FROM savings_goals
+        WHERE savings_goals.id = goal_contributions.goal_id
+        AND savings_goals.user_id = auth.uid()
+    )
+);
+
+CREATE POLICY "Users can update own goal contributions" ON goal_contributions FOR
+UPDATE USING (
+    EXISTS (
+        SELECT 1 FROM savings_goals
+        WHERE savings_goals.id = goal_contributions.goal_id
+        AND savings_goals.user_id = auth.uid()
+    )
+);
+
+CREATE POLICY "Users can delete own goal contributions" ON goal_contributions FOR DELETE USING (
+    EXISTS (
+        SELECT 1 FROM savings_goals
+        WHERE savings_goals.id = goal_contributions.goal_id
+        AND savings_goals.user_id = auth.uid()
+    )
+);
 
 -- ============================================================================
 -- RLS POLICIES - USER SETTINGS
@@ -365,6 +490,58 @@ COMMENT ON
 TABLE recurring_transactions IS 'Stores templates for recurring income and expense transactions';
 
 COMMENT ON FUNCTION create_recurring_transaction (UUID) IS 'Creates a new transaction from a recurring template and updates the next occurrence date';
+
+-- ============================================================================
+-- GOAL MILESTONES FUNCTIONS AND TRIGGERS
+-- ============================================================================
+
+-- Function to automatically create default milestones for a goal
+CREATE OR REPLACE FUNCTION create_default_milestones(goal_uuid UUID)
+RETURNS VOID AS $$
+DECLARE
+    goal_record RECORD;
+BEGIN
+    -- Get goal details
+    SELECT * INTO goal_record FROM savings_goals WHERE id = goal_uuid;
+
+    -- Create default milestones at 25%, 50%, 75%, 100%
+    INSERT INTO goal_milestones (goal_id, milestone_name, milestone_percentage, target_amount)
+    VALUES
+        (goal_uuid, '25% Complete', 25.00, goal_record.target_amount * 0.25),
+        (goal_uuid, '50% Complete', 50.00, goal_record.target_amount * 0.50),
+        (goal_uuid, '75% Complete', 75.00, goal_record.target_amount * 0.75),
+        (goal_uuid, 'Goal Achieved!', 100.00, goal_record.target_amount);
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to update milestone achievements
+CREATE OR REPLACE FUNCTION update_milestone_achievements()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Update milestones when goal current_amount changes
+    UPDATE goal_milestones
+    SET
+        is_achieved = CASE
+            WHEN (NEW.current_amount >= target_amount) THEN true
+            ELSE false
+        END,
+        achieved_date = CASE
+            WHEN (NEW.current_amount >= target_amount AND (OLD.current_amount < target_amount OR achieved_date IS NULL)) THEN CURRENT_DATE
+            ELSE achieved_date
+        END,
+        updated_at = NOW()
+    WHERE goal_id = NEW.id;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create trigger for milestone updates
+DROP TRIGGER IF EXISTS trigger_update_milestones ON savings_goals;
+CREATE TRIGGER trigger_update_milestones
+    AFTER UPDATE OF current_amount ON savings_goals
+    FOR EACH ROW
+    EXECUTE FUNCTION update_milestone_achievements();
 
 -- ============================================================================
 -- MIGRATION COMPLETE
