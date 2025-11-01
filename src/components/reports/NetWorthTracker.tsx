@@ -2,6 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, DollarSign, Calendar } from 'lucide-react';
 import { useBankAccounts, useLoans, useSavingsGoals } from '@/lib/hooks/use-budget-queries';
+import { useAssets } from '@/lib/hooks/use-asset-queries';
+import { useInvestments } from '@/lib/hooks/use-investment-queries';
 import { format, subMonths } from 'date-fns';
 
 interface NetWorthTrackerProps {
@@ -15,24 +17,41 @@ export function NetWorthTracker({ dateRange: _dateRange }: NetWorthTrackerProps)
     const { data: bankAccounts = [] } = useBankAccounts();
     const { data: loans = [] } = useLoans();
     const { data: savingsGoals = [] } = useSavingsGoals();
+    const { data: assets = [] } = useAssets();
+    const { data: investments = [] } = useInvestments();
 
     // Calculate current net worth
-    const totalAssets = bankAccounts.reduce((sum, account) => sum + account.balance, 0) +
-        savingsGoals.reduce((sum, goal) => sum + goal.current_amount, 0);
+    const bankAccountsTotal = bankAccounts.reduce((sum, account) => sum + account.balance, 0);
+    const savingsGoalsTotal = savingsGoals.reduce((sum, goal) => sum + goal.current_amount, 0);
+    const assetsTotal = assets.filter(a => a.is_active).reduce((sum, asset) => sum + asset.current_value, 0);
+    const investmentsTotal = investments
+        .filter(inv => inv.is_active)
+        .reduce((sum, inv) => sum + (inv.quantity * inv.current_price), 0);
 
-    const totalLiabilities = loans.reduce((sum, loan) => sum + loan.outstanding_balance, 0);
+    const totalAssets = bankAccountsTotal + savingsGoalsTotal + assetsTotal + investmentsTotal;
+
+    const totalLiabilities = loans.reduce((sum: number, loan: any) => sum + loan.remaining_balance, 0);
 
     const currentNetWorth = totalAssets - totalLiabilities;
 
     // Calculate net worth for previous periods (simplified - would need historical data)
+    // For now, showing estimated trend based on loan payments and average monthly changes
+    const monthlyLoanPayment = loans.reduce((sum: number, loan: any) => sum + loan.monthly_payment, 0);
+    const estimatedMonthlySavings = (bankAccountsTotal + savingsGoalsTotal) / 12; // Rough estimate
+    const estimatedMonthlyLiabilityChange = totalLiabilities / 12; // Rough estimate of liability reduction
+
     const previousPeriods = Array.from({ length: 6 }, (_, i) => {
         const date = subMonths(new Date(), i);
+        // Estimate historical net worth by working backwards
+        const monthsAgo = i;
+        const estimatedAssets = totalAssets - (estimatedMonthlySavings * monthsAgo);
+        const estimatedLiabilities = totalLiabilities + (estimatedMonthlyLiabilityChange * monthsAgo);
+
         return {
             month: format(date, 'MMM yyyy'),
-            // This would need historical data - for now using simplified calculations
-            netWorth: currentNetWorth - (i * 1000) + Math.random() * 2000,
-            assets: totalAssets - (i * 500) + Math.random() * 1000,
-            liabilities: totalLiabilities - (i * 200) + Math.random() * 400
+            netWorth: estimatedAssets - estimatedLiabilities,
+            assets: estimatedAssets,
+            liabilities: estimatedLiabilities
         };
     }).reverse();
 
@@ -137,11 +156,19 @@ export function NetWorthTracker({ dateRange: _dateRange }: NetWorthTrackerProps)
                     <div className="space-y-3">
                         <div className="flex justify-between items-center">
                             <span className="text-sm">Bank Accounts</span>
-                            <span className="font-medium">{formatCurrency(bankAccounts.reduce((sum, account) => sum + account.balance, 0))}</span>
+                            <span className="font-medium">{formatCurrency(bankAccountsTotal)}</span>
                         </div>
                         <div className="flex justify-between items-center">
                             <span className="text-sm">Savings Goals</span>
-                            <span className="font-medium">{formatCurrency(savingsGoals.reduce((sum, goal) => sum + goal.current_amount, 0))}</span>
+                            <span className="font-medium">{formatCurrency(savingsGoalsTotal)}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-sm">Fixed Assets</span>
+                            <span className="font-medium">{formatCurrency(assetsTotal)}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-sm">Investments</span>
+                            <span className="font-medium">{formatCurrency(investmentsTotal)}</span>
                         </div>
                         <div className="border-t pt-2 flex justify-between items-center font-semibold">
                             <span>Total Assets</span>
@@ -161,12 +188,16 @@ export function NetWorthTracker({ dateRange: _dateRange }: NetWorthTrackerProps)
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-3">
-                        {loans.map((loan) => (
-                            <div key={loan.id} className="flex justify-between items-center">
-                                <span className="text-sm">{loan.party_name}</span>
-                                <span className="font-medium text-red-600">{formatCurrency(loan.outstanding_balance)}</span>
-                            </div>
-                        ))}
+                        {loans.length > 0 ? (
+                            loans.map((loan: any) => (
+                                <div key={loan.id} className="flex justify-between items-center">
+                                    <span className="text-sm">{loan.loan_name || loan.party_name || 'Loan'}</span>
+                                    <span className="font-medium text-red-600">{formatCurrency(loan.remaining_balance)}</span>
+                                </div>
+                            ))
+                        ) : (
+                            <p className="text-sm text-muted-foreground">No active loans</p>
+                        )}
                         <div className="border-t pt-2 flex justify-between items-center font-semibold">
                             <span>Total Liabilities</span>
                             <span className="text-red-600">{formatCurrency(totalLiabilities)}</span>

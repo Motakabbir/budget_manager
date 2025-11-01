@@ -613,7 +613,6 @@ export default function ReportsPage() {
                         <SpendingHeatmap />
                         <CategoryComparisonCharts />
                         <IncomeBreakdownCharts />
-                        dgdg
                         <ExpenseTrendsCharts />
                         <div className="md:col-span-2">
                             <BudgetVarianceCharts />
