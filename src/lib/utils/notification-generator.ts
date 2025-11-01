@@ -75,7 +75,7 @@ export async function checkBudgetAlerts(userId: string) {
     if (!transactions) return;
 
     // Calculate spending per category
-    const spendingByCategory = transactions.reduce((acc, t) => {
+    const spendingByCategory = transactions.reduce((acc: Record<string, number>, t: any) => {
         acc[t.category_id] = (acc[t.category_id] || 0) + t.amount;
         return acc;
     }, {} as Record<string, number>);
@@ -226,8 +226,8 @@ export async function generateSpendingInsights(userId: string) {
 
     if (!thisMonthExpenses || !lastMonthExpenses) return;
 
-    const thisMonthTotal = thisMonthExpenses.reduce((sum, t) => sum + t.amount, 0);
-    const lastMonthTotal = lastMonthExpenses.reduce((sum, t) => sum + t.amount, 0);
+    const thisMonthTotal = thisMonthExpenses.reduce((sum: number, t: any) => sum + t.amount, 0);
+    const lastMonthTotal = lastMonthExpenses.reduce((sum: number, t: any) => sum + t.amount, 0);
 
     const difference = thisMonthTotal - lastMonthTotal;
     const percentageChange = lastMonthTotal > 0 ? (difference / lastMonthTotal) * 100 : 0;

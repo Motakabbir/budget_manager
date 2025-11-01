@@ -1,7 +1,11 @@
-import { useEffect, lazy, Suspense } from 'react';
+import { useEffect, lazy, Suspense, useState } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase/client';
 import { DashboardSkeleton } from '@/components/loading/LoadingSkeletons';
+import { scheduledNotificationProcessor } from '@/lib/services/scheduled-notification-processor';
+import { PINLockScreen } from '@/components/security/PINLockScreen';
+import { useSecuritySettings } from '@/lib/hooks/use-security';
+import { autoStartTourIfNeeded } from '@/lib/services/user-tour.service';
 
 // Eager load auth and layout (needed immediately)
 import AuthPage from '@/pages/AuthPage';
@@ -14,39 +18,86 @@ const CardsPage = lazy(() => import('@/pages/CardsPage'));
 const LoansPage = lazy(() => import('@/pages/LoansPage'));
 const RecurringTransactionsPage = lazy(() => import('@/pages/RecurringTransactionsPage'));
 const BudgetsPage = lazy(() => import('@/pages/BudgetsPage'));
+const BudgetingAdvancedPage = lazy(() => import('@/pages/BudgetingAdvancedPage'));
+const ForecastingPage = lazy(() => import('@/pages/ForecastingPage'));
+const FinancialGoalsPage = lazy(() => import('@/pages/FinancialGoalsPage'));
 const InvestmentsPage = lazy(() => import('@/pages/InvestmentsPage'));
 const AssetsPage = lazy(() => import('@/pages/AssetsPage'));
 const AnalyticsPage = lazy(() => import('@/pages/AnalyticsPage'));
+const ReportsPage = lazy(() => import('@/pages/ReportsPage'));
 const IncomePage = lazy(() => import('@/pages/IncomePage'));
 const ExpensesPage = lazy(() => import('@/pages/ExpensesPage'));
 const CategoriesPage = lazy(() => import('@/pages/CategoriesPage'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
+const SecuritySettingsPage = lazy(() => import('@/pages/SecuritySettingsPage'));
 const NotificationsPage = lazy(() => import('@/pages/NotificationsPage'));
+const NotificationPreferencesPage = lazy(() => import('@/pages/NotificationPreferencesPage'));
+const UserProfilePage = lazy(() => import('@/pages/UserProfilePage'));
 
 function App() {
     const navigate = useNavigate();
+    const [isLocked, setIsLocked] = useState(false);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [tourChecked, setTourChecked] = useState(false); // Track if tour was checked
+    const { data: settings } = useSecuritySettings();
 
     useEffect(() => {
         // Check initial session
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        supabase.auth.getSession().then(({ data: { session } }: { data: { session: any } }) => {
+            setIsAuthenticated(!!session);
+
             if (!session && window.location.pathname !== '/auth') {
                 navigate('/auth');
             } else if (session && window.location.pathname === '/') {
                 navigate('/dashboard');
+            }
+
+            // Check if PIN is required on launch
+            if (session && settings?.require_pin_on_launch && settings.pin_enabled) {
+                setIsLocked(true);
             }
         });
 
         // Listen for auth changes
         const {
             data: { subscription },
-        } = supabase.auth.onAuthStateChange((_event, session) => {
+        } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
+            setIsAuthenticated(!!session);
+
             if (!session) {
+                setIsLocked(false);
                 navigate('/auth');
             }
         });
 
-        return () => subscription.unsubscribe();
-    }, [navigate]);
+        // Listen for lock events from security service
+        const handleShowLock = () => setIsLocked(true);
+        window.addEventListener('show-pin-lock', handleShowLock);
+
+        // Initialize scheduled notification processor
+        // This will start processing scheduled notifications in development mode
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const processor = scheduledNotificationProcessor;
+
+        return () => {
+            subscription.unsubscribe();
+            window.removeEventListener('show-pin-lock', handleShowLock);
+        };
+    }, [navigate, settings]);
+
+    // Separate effect for tour - only runs once when authenticated
+    useEffect(() => {
+        if (isAuthenticated && !tourChecked) {
+            console.log('Checking if tour should auto-start...');
+            autoStartTourIfNeeded();
+            setTourChecked(true); // Mark as checked so it doesn't run again
+        }
+    }, [isAuthenticated, tourChecked]);
+
+    // Show PIN lock screen if locked and authenticated
+    if (isLocked && isAuthenticated) {
+        return <PINLockScreen onUnlock={() => setIsLocked(false)} />;
+    }
 
     return (
         <Routes>
@@ -102,6 +153,30 @@ function App() {
                     }
                 />
                 <Route
+                    path="budgets-advanced"
+                    element={
+                        <Suspense fallback={<DashboardSkeleton />}>
+                            <BudgetingAdvancedPage />
+                        </Suspense>
+                    }
+                />
+                <Route
+                    path="forecasting"
+                    element={
+                        <Suspense fallback={<DashboardSkeleton />}>
+                            <ForecastingPage />
+                        </Suspense>
+                    }
+                />
+                <Route
+                    path="goals"
+                    element={
+                        <Suspense fallback={<DashboardSkeleton />}>
+                            <FinancialGoalsPage />
+                        </Suspense>
+                    }
+                />
+                <Route
                     path="investments"
                     element={
                         <Suspense fallback={<DashboardSkeleton />}>
@@ -122,6 +197,14 @@ function App() {
                     element={
                         <Suspense fallback={<DashboardSkeleton />}>
                             <AnalyticsPage />
+                        </Suspense>
+                    }
+                />
+                <Route
+                    path="reports"
+                    element={
+                        <Suspense fallback={<DashboardSkeleton />}>
+                            <ReportsPage />
                         </Suspense>
                     }
                 />
@@ -158,10 +241,34 @@ function App() {
                     }
                 />
                 <Route
+                    path="notification-preferences"
+                    element={
+                        <Suspense fallback={<DashboardSkeleton />}>
+                            <NotificationPreferencesPage />
+                        </Suspense>
+                    }
+                />
+                <Route
+                    path="profile"
+                    element={
+                        <Suspense fallback={<DashboardSkeleton />}>
+                            <UserProfilePage />
+                        </Suspense>
+                    }
+                />
+                <Route
                     path="settings"
                     element={
                         <Suspense fallback={<DashboardSkeleton />}>
                             <SettingsPage />
+                        </Suspense>
+                    }
+                />
+                <Route
+                    path="security"
+                    element={
+                        <Suspense fallback={<DashboardSkeleton />}>
+                            <SecuritySettingsPage />
                         </Suspense>
                     }
                 />

@@ -20,7 +20,7 @@ import type { InvestmentWithStats } from '@/lib/supabase/database.types';
 
 export default function InvestmentsPage() {
     const [showAddDialog, setShowAddDialog] = useState(false);
-    
+
     const { data: investments, isLoading } = useInvestmentsWithStats();
     const { data: summary } = usePortfolioSummary();
     const { data: breakdown } = useInvestmentBreakdown();
@@ -95,9 +95,8 @@ export default function InvestmentsPage() {
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{formatCurrency(summary.total_current_value)}</div>
-                            <p className={`text-xs mt-1 ${
-                                summary.total_profit_loss >= 0 ? 'text-green-600' : 'text-red-600'
-                            }`}>
+                            <p className={`text-xs mt-1 ${summary.total_profit_loss >= 0 ? 'text-green-600' : 'text-red-600'
+                                }`}>
                                 {formatPercent(summary.total_profit_loss_percentage)} return
                             </p>
                         </CardContent>
@@ -106,14 +105,12 @@ export default function InvestmentsPage() {
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Total Profit/Loss</CardTitle>
-                            <TrendingUp className={`h-4 w-4 ${
-                                summary.total_profit_loss >= 0 ? 'text-green-500' : 'text-red-500'
-                            }`} />
+                            <TrendingUp className={`h-4 w-4 ${summary.total_profit_loss >= 0 ? 'text-green-500' : 'text-red-500'
+                                }`} />
                         </CardHeader>
                         <CardContent>
-                            <div className={`text-2xl font-bold ${
-                                summary.total_profit_loss >= 0 ? 'text-green-600' : 'text-red-600'
-                            }`}>
+                            <div className={`text-2xl font-bold ${summary.total_profit_loss >= 0 ? 'text-green-600' : 'text-red-600'
+                                }`}>
                                 {formatCurrency(Math.abs(summary.total_profit_loss))}
                             </div>
                             <p className="text-xs text-muted-foreground mt-1">
@@ -205,10 +202,10 @@ export default function InvestmentsPage() {
                                             </div>
                                             <div className="text-right">
                                                 <p className="text-sm font-bold text-green-600">
-                                                    {formatPercent(inv.profit_loss_percentage)}
+                                                    {formatPercent(inv.profit_loss_percentage || 0)}
                                                 </p>
                                                 <p className="text-xs text-green-600">
-                                                    {formatCurrency(inv.profit_loss)}
+                                                    {formatCurrency(inv.profit_loss || 0)}
                                                 </p>
                                             </div>
                                         </div>
@@ -237,10 +234,10 @@ export default function InvestmentsPage() {
                                             </div>
                                             <div className="text-right">
                                                 <p className="text-sm font-bold text-red-600">
-                                                    {formatPercent(inv.profit_loss_percentage)}
+                                                    {formatPercent(inv.profit_loss_percentage || 0)}
                                                 </p>
                                                 <p className="text-xs text-red-600">
-                                                    {formatCurrency(Math.abs(inv.profit_loss))}
+                                                    {formatCurrency(Math.abs(inv.profit_loss || 0))}
                                                 </p>
                                             </div>
                                         </div>

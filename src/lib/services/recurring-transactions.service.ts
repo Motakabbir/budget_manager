@@ -142,12 +142,12 @@ export class RecurringTransactionsService {
                 };
             }
 
-            const active = recurring.filter(r => r.is_active);
-            const inactive = recurring.filter(r => !r.is_active);
+            const active = recurring.filter((r: any) => r.is_active);
+            const inactive = recurring.filter((r: any) => !r.is_active);
             
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-            const due = active.filter(r => new Date(r.next_occurrence) <= today);
+            const due = active.filter((r: any) => new Date(r.next_occurrence) <= today);
 
             // Calculate monthly totals
             const getMonthlyMultiplier = (frequency: string): number => {
@@ -162,14 +162,14 @@ export class RecurringTransactionsService {
                 return map[frequency] || 1;
             };
 
-            const income = active.filter(r => r.type === 'income');
-            const expense = active.filter(r => r.type === 'expense');
+            const income = active.filter((r: any) => r.type === 'income');
+            const expense = active.filter((r: any) => r.type === 'expense');
 
-            const totalMonthlyIncome = income.reduce((sum, r) => 
+            const totalMonthlyIncome = income.reduce((sum: number, r: any) => 
                 sum + (r.amount * getMonthlyMultiplier(r.frequency)), 0
             );
 
-            const totalMonthlyExpense = expense.reduce((sum, r) => 
+            const totalMonthlyExpense = expense.reduce((sum: number, r: any) => 
                 sum + (r.amount * getMonthlyMultiplier(r.frequency)), 0
             );
 

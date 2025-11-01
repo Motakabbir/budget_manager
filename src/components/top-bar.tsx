@@ -2,6 +2,7 @@ import { Menu, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { NotificationPanel } from '@/components/notifications/notification-panel';
+import { QuickAccess } from '@/components/quick-access';
 import { cn } from '@/lib/utils';
 import { useLocation } from 'react-router-dom';
 
@@ -54,6 +55,7 @@ export function TopBar({ onMenuClick, className }: TopBarProps) {
                     <div className="relative w-full">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <input
+                            data-tour="search"
                             type="search"
                             placeholder="Search transactions..."
                             className="w-full h-9 pl-10 pr-4 rounded-lg border bg-background/50 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
@@ -73,8 +75,13 @@ export function TopBar({ onMenuClick, className }: TopBarProps) {
                         <span className="sr-only">Search</span>
                     </Button>
 
+                    {/* Quick Access */}
+                    <QuickAccess />
+
                     {/* Notifications */}
-                    <NotificationPanel />
+                    <div data-tour="notifications">
+                        <NotificationPanel />
+                    </div>
 
                     {/* Theme toggle */}
                     <ThemeToggle />

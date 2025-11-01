@@ -69,7 +69,7 @@ export const calculateAssetStats = (asset: Asset): AssetWithStats => {
         : null;
     
     // Insurance status
-    let insuranceStatus: 'active' | 'expired' | 'expiring_soon' | 'not_insured' = 'not_insured';
+    let insuranceStatus: 'valid' | 'expired' | 'expiring_soon' | 'not_insured' = 'not_insured';
     if (asset.is_insured && asset.insurance_expiry_date) {
         const expiryDate = new Date(asset.insurance_expiry_date);
         const daysUntilExpiry = Math.floor((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
@@ -79,12 +79,12 @@ export const calculateAssetStats = (asset: Asset): AssetWithStats => {
         } else if (daysUntilExpiry <= 30) {
             insuranceStatus = 'expiring_soon';
         } else {
-            insuranceStatus = 'active';
+            insuranceStatus = 'valid';
         }
     }
     
     // Warranty status
-    let warrantyStatus: 'active' | 'expired' | 'expiring_soon' | 'no_warranty' = 'no_warranty';
+    let warrantyStatus: 'valid' | 'expired' | 'expiring_soon' | 'no_warranty' = 'no_warranty';
     if (asset.warranty_expiry_date) {
         const warrantyDate = new Date(asset.warranty_expiry_date);
         const daysUntilExpiry = Math.floor((warrantyDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
@@ -94,7 +94,7 @@ export const calculateAssetStats = (asset: Asset): AssetWithStats => {
         } else if (daysUntilExpiry <= 30) {
             warrantyStatus = 'expiring_soon';
         } else {
-            warrantyStatus = 'active';
+            warrantyStatus = 'valid';
         }
     }
     
@@ -222,18 +222,26 @@ export const useAssetsSummary = (): {
     
     const activeAssets = assets.filter(asset => asset.is_active);
     
+    const totalPurchasePrice = activeAssets.reduce((sum, asset) => sum + asset.purchase_price, 0);
+    const totalCurrentValue = activeAssets.reduce((sum, asset) => sum + asset.current_value, 0);
+    const totalDepreciation = totalPurchasePrice - totalCurrentValue;
+    const depreciationPercentage = totalPurchasePrice > 0
+        ? (totalDepreciation / totalPurchasePrice) * 100
+        : 0;
+    
     const summary: AssetsSummary = {
+        active_assets: activeAssets.length,
         total_assets: activeAssets.length,
-        total_purchase_price: activeAssets.reduce((sum, asset) => sum + asset.purchase_price, 0),
-        total_current_value: activeAssets.reduce((sum, asset) => sum + asset.current_value, 0),
-        total_depreciation: 0, // calculated below
+        total_purchase_value: totalPurchasePrice,
+        total_purchase_price: totalPurchasePrice,
+        total_current_value: totalCurrentValue,
+        total_depreciation: totalDepreciation,
+        depreciation_percentage: depreciationPercentage,
         total_insured_value: activeAssets
             .filter(asset => asset.is_insured)
             .reduce((sum, asset) => sum + asset.current_value, 0),
         assets_insured_count: activeAssets.filter(asset => asset.is_insured).length,
     };
-    
-    summary.total_depreciation = summary.total_purchase_price - summary.total_current_value;
     
     return { data: summary, isLoading: false };
 };
@@ -265,9 +273,9 @@ export const useAssetBreakdown = (): {
     }, {} as Record<string, Asset[]>);
     
     // Calculate breakdown for each type
-    const breakdown: AssetBreakdown[] = Object.entries(grouped).map(([type, assts]) => {
-        const totalPurchasePrice = assts.reduce((sum, asset) => sum + asset.purchase_price, 0);
-        const totalCurrentValue = assts.reduce((sum, asset) => sum + asset.current_value, 0);
+    const breakdown: AssetBreakdown[] = Object.entries(grouped).map(([type, assets]) => {
+        const totalPurchasePrice = assets.reduce((sum: number, asset: Asset) => sum + asset.purchase_price, 0);
+        const totalCurrentValue = assets.reduce((sum: number, asset: Asset) => sum + asset.current_value, 0);
         const totalDepreciation = totalPurchasePrice - totalCurrentValue;
         const percentageOfTotal = totalValue > 0
             ? (totalCurrentValue / totalValue) * 100
@@ -275,7 +283,7 @@ export const useAssetBreakdown = (): {
         
         return {
             asset_type: type as any,
-            count: assts.length,
+            count: assets.length,
             total_purchase_price: totalPurchasePrice,
             total_current_value: totalCurrentValue,
             total_depreciation: totalDepreciation,
@@ -363,7 +371,7 @@ export const useMostDepreciatedAssets = (limit: number = 5) => {
     
     const activeAssets = assets.filter(asset => asset.is_active);
     const sorted = [...activeAssets].sort(
-        (a, b) => b.depreciation_percentage - a.depreciation_percentage
+        (a, b) => (b.depreciation_percentage ?? 0) - (a.depreciation_percentage ?? 0)
     );
     
     return { data: sorted.slice(0, limit), isLoading: false };

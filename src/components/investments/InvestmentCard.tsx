@@ -32,7 +32,7 @@ export function InvestmentCard({
     onRecordDividend,
 }: InvestmentCardProps) {
     const stats = calculateInvestmentStats(investment);
-    const isProfit = stats.profit_loss >= 0;
+    const isProfit = (stats.profit_loss ?? 0) >= 0;
     const hasSymbol = investment.symbol && investment.symbol.trim() !== '';
 
     // Format currency
@@ -83,7 +83,7 @@ export function InvestmentCard({
                             </Badge>
                         </div>
                     </div>
-                    
+
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -107,7 +107,7 @@ export function InvestmentCard({
                                 </DropdownMenuItem>
                             )}
                             {onDelete && (
-                                <DropdownMenuItem 
+                                <DropdownMenuItem
                                     onClick={() => onDelete(investment.id)}
                                     className="text-destructive"
                                 >
@@ -146,7 +146,7 @@ export function InvestmentCard({
                     <div>
                         <p className="text-xs text-muted-foreground mb-1">Current Value</p>
                         <p className="text-sm font-semibold">
-                            {formatCurrency(stats.current_value)}
+                            {formatCurrency(stats.current_value ?? 0)}
                         </p>
                     </div>
                 </div>
@@ -166,10 +166,10 @@ export function InvestmentCard({
                         </div>
                         <div className="text-right">
                             <p className={`text-sm font-bold ${isProfit ? 'text-green-600' : 'text-red-600'}`}>
-                                {formatCurrency(Math.abs(stats.profit_loss))}
+                                {formatCurrency(Math.abs(stats.profit_loss ?? 0))}
                             </p>
                             <p className={`text-xs ${isProfit ? 'text-green-600' : 'text-red-600'}`}>
-                                {formatPercent(stats.profit_loss_percentage)}
+                                {formatPercent(stats.profit_loss_percentage ?? 0)}
                             </p>
                         </div>
                     </div>
@@ -183,8 +183,8 @@ export function InvestmentCard({
                             </span>
                         </div>
                         <div className="text-right">
-                            <p className={`text-sm font-bold ${stats.roi_percentage >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                                {formatPercent(stats.roi_percentage)}
+                            <p className={`text-sm font-bold ${(stats.roi_percentage ?? 0) >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                                {formatPercent(stats.roi_percentage ?? 0)}
                             </p>
                         </div>
                     </div>
@@ -200,7 +200,7 @@ export function InvestmentCard({
                             </span>
                         </div>
                     )}
-                    
+
                     <div className="flex items-center justify-between text-xs">
                         <div className="flex items-center gap-1 text-muted-foreground">
                             <Calendar className="h-3 w-3" />
