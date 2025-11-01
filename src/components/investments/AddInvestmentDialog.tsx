@@ -111,6 +111,10 @@ export function AddInvestmentDialog({ open, onOpenChange }: AddInvestmentDialogP
                 platform: platform.trim() || null,
                 dividend_yield: dividendYield ? parseFloat(dividendYield) : null,
                 notes: notes.trim() || null,
+                // Required fields with defaults
+                is_active: true,
+                last_dividend_date: null,
+                total_dividends_received: 0,
             },
             {
                 onSuccess: () => {

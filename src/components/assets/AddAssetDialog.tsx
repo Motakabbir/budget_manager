@@ -172,6 +172,10 @@ export function AddAssetDialog({ open, onOpenChange }: AddAssetDialogProps) {
                 vehicle_vin: assetType === 'vehicle' && vehicleVin.trim() ? vehicleVin.trim() : null,
                 vehicle_mileage: assetType === 'vehicle' && vehicleMileage ? parseInt(vehicleMileage) : null,
                 vehicle_license_plate: assetType === 'vehicle' && vehicleLicensePlate.trim() ? vehicleLicensePlate.trim() : null,
+                // Required fields with defaults
+                is_active: true,
+                sale_date: null,
+                sale_price: null,
             },
             {
                 onSuccess: () => {
