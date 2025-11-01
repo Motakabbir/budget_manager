@@ -8,6 +8,7 @@ import {
     BarChart3,
     FileText,
     TrendingUp,
+    TrendingDown,
     Download,
     Calendar,
     DollarSign,
@@ -67,7 +68,7 @@ interface ReportData {
 }
 
 export default function ReportsPage() {
-    const [dateRange, setDateRange] = useState('last-30-days');
+    const [dateRange, setDateRange] = useState('last-year');
     const [exportFormat, setExportFormat] = useState<'pdf' | 'excel' | 'csv'>('pdf');
 
     // Convert dateRange string to actual date range
@@ -118,16 +119,10 @@ export default function ReportsPage() {
 
     // Get year-to-date data for year-end summary
     const yearStart = startOfYear(new Date());
-    const { data: yearTransactions = [] } = useTransactions(
-        yearStart.toISOString(),
-        new Date().toISOString()
-    );
+    const { data: yearTransactions = [] } = useTransactions();
 
-    // Get current period data
-    const { data: currentTransactions = [] } = useTransactions(
-        selectedDateRange.start.toISOString(),
-        selectedDateRange.end.toISOString()
-    );
+    // Get current period data - NO DATE FILTER, show all transactions
+    const { data: currentTransactions = [], isLoading: isLoadingCurrent } = useTransactions();
 
     // Get previous period data for comparison (same duration as current period)
     const previousPeriodStart = new Date(selectedDateRange.start);
@@ -137,27 +132,39 @@ export default function ReportsPage() {
     previousPeriodStart.setTime(previousPeriodStart.getTime() - periodDuration);
     previousPeriodEnd.setTime(previousPeriodEnd.getTime() - periodDuration);
 
-    const { data: previousTransactions = [] } = useTransactions(
-        previousPeriodStart.toISOString(),
-        previousPeriodEnd.toISOString()
-    );
-
+    const { data: previousTransactions = [] } = useTransactions();
     // Calculate metrics
     const currentIncome = currentTransactions
-        .filter(t => t.type === 'income')
-        .reduce((sum, t) => sum + t.amount, 0);
+        .filter((t: any) => t.type === 'income')
+        .reduce((sum: number, t: any) => sum + t.amount, 0);
 
     const currentExpenses = currentTransactions
-        .filter(t => t.type === 'expense')
-        .reduce((sum, t) => sum + t.amount, 0);
+        .filter((t: any) => t.type === 'expense')
+        .reduce((sum: number, t: any) => sum + t.amount, 0);
 
     const previousIncome = previousTransactions
-        .filter(t => t.type === 'income')
-        .reduce((sum, t) => sum + t.amount, 0);
+        .filter((t: any) => t.type === 'income')
+        .reduce((sum: number, t: any) => sum + t.amount, 0);
 
     const previousExpenses = previousTransactions
-        .filter(t => t.type === 'expense')
-        .reduce((sum, t) => sum + t.amount, 0);
+        .filter((t: any) => t.type === 'expense')
+        .reduce((sum: number, t: any) => sum + t.amount, 0);
+    // Debug log
+    console.log('ReportsPage - All Transactions (NO FILTER):', {
+        transactionCount: currentTransactions.length,
+        income: currentIncome,
+        expenses: currentExpenses,
+        netProfit: currentIncome - currentExpenses,
+        isLoading: isLoadingCurrent,
+        sampleTransactions: currentTransactions.slice(0, 5).map((t: any) => ({
+            date: t.date,
+            type: t.type,
+            amount: t.amount,
+            description: t.description
+        }))
+    });
+
+
 
     const netProfit = currentIncome - currentExpenses;
     const previousNetProfit = previousIncome - previousExpenses;
@@ -532,61 +539,100 @@ export default function ReportsPage() {
             </div>
 
             {/* Overview Cards */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Income</CardTitle>
-                        <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{formatCurrency(currentIncome)}</div>
-                        <p className="text-xs text-muted-foreground">
-                            {incomeChange >= 0 ? '+' : ''}{incomeChange.toFixed(1)}% from last month
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
-                        <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{formatCurrency(currentExpenses)}</div>
-                        <p className="text-xs text-muted-foreground">
-                            {expenseChange >= 0 ? '+' : ''}{expenseChange.toFixed(1)}% from last month
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Net Profit</CardTitle>
-                        <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className={`text-2xl font-bold ${netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {formatCurrency(netProfit)}
+            {isLoadingCurrent ? (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    {[1, 2, 3, 4].map((i) => (
+                        <Card key={i}>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Loading...</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="animate-pulse">
+                                    <div className="h-8 bg-gray-200 rounded w-24 mb-2"></div>
+                                    <div className="h-4 bg-gray-100 rounded w-32"></div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+            ) : currentTransactions.length === 0 ? (
+                <Card className="col-span-full">
+                    <CardContent className="pt-6">
+                        <div className="text-center py-8">
+                            <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                            <h3 className="text-lg font-semibold mb-2">No Transactions Found</h3>
+                            <p className="text-muted-foreground mb-4">
+                                You haven't added any transactions yet.
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                                Go to Income or Expenses pages to add your first transaction.
+                            </p>
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                            {profitChange >= 0 ? '+' : ''}{profitChange.toFixed(1)}% from last month
-                        </p>
                     </CardContent>
                 </Card>
+            ) : (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Total Income</CardTitle>
+                            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{formatCurrency(currentIncome)}</div>
+                            <p className="text-xs text-muted-foreground">
+                                {incomeChange >= 0 ? '+' : ''}{incomeChange.toFixed(1)}% from last period
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                                ({currentTransactions.filter((t: any) => t.type === 'income').length} income transactions)
+                            </p>
+                        </CardContent>
+                    </Card>
 
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Savings Rate</CardTitle>
-                        <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{savingsRate.toFixed(1)}%</div>
-                        <p className="text-xs text-muted-foreground">
-                            Target: 20%
-                        </p>
-                    </CardContent>
-                </Card>
-            </div>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
+                            <TrendingDown className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{formatCurrency(currentExpenses)}</div>
+                            <p className="text-xs text-muted-foreground">
+                                {expenseChange >= 0 ? '+' : ''}{expenseChange.toFixed(1)}% from last period
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                                ({currentTransactions.filter((t: any) => t.type === 'expense').length} expense transactions)
+                            </p>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Net Profit</CardTitle>
+                            <DollarSign className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className={`text-2xl font-bold ${netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {formatCurrency(netProfit)}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                                {profitChange >= 0 ? '+' : ''}{profitChange.toFixed(1)}% from last period
+                            </p>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Savings Rate</CardTitle>
+                            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{savingsRate.toFixed(1)}%</div>
+                            <p className="text-xs text-muted-foreground">
+                                Target: 20%
+                            </p>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
 
             {/* Main Reports Tabs */}
             <Tabs defaultValue="comprehensive" className="space-y-4">
