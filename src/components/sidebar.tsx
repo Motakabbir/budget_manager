@@ -17,7 +17,6 @@ import {
     Wallet,
     Briefcase,
     BarChart3,
-    Target,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useEffect } from 'react';
@@ -33,7 +32,6 @@ const navigation = [
     { name: 'Budgets', href: '/budgets', icon: PieChart },
     { name: 'Investments', href: '/investments', icon: Wallet },
     { name: 'Assets', href: '/assets', icon: Briefcase },
-    { name: 'Goals', href: '/goals', icon: Target },
     { name: 'Analytics', href: '/analytics', icon: BarChart3 },
     { name: 'Reports', href: '/reports', icon: BarChart3 },
     { name: 'Categories', href: '/categories', icon: Tag },

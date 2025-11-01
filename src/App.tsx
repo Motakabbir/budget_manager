@@ -17,7 +17,6 @@ const RecurringTransactionsPage = lazy(() => import('@/pages/RecurringTransactio
 const BudgetsPage = lazy(() => import('@/pages/BudgetsPage'));
 const InvestmentsPage = lazy(() => import('@/pages/InvestmentsPage'));
 const AssetsPage = lazy(() => import('@/pages/AssetsPage'));
-const GoalsPage = lazy(() => import('@/pages/GoalsPage'));
 const AnalyticsPage = lazy(() => import('@/pages/AnalyticsPage'));
 const ReportsPage = lazy(() => import('@/pages/ReportsPage'));
 const IncomePage = lazy(() => import('@/pages/IncomePage'));
@@ -123,14 +122,6 @@ function App() {
                     element={
                         <Suspense fallback={<DashboardSkeleton />}>
                             <AssetsPage />
-                        </Suspense>
-                    }
-                />
-                <Route
-                    path="goals"
-                    element={
-                        <Suspense fallback={<DashboardSkeleton />}>
-                            <GoalsPage />
                         </Suspense>
                     }
                 />
