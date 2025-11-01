@@ -1647,7 +1647,7 @@ export function useBudgetSpending(categoryId: string, period: 'monthly' | 'yearl
 
             if (transError) throw transError;
 
-            const spent = transactions?.reduce((sum, t) => sum + t.amount, 0) || 0;
+            const spent = transactions?.reduce((sum: number, t: any) => sum + t.amount, 0) || 0;
 
             return {
                 spent,

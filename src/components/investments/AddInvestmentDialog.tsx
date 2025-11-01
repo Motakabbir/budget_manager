@@ -102,15 +102,15 @@ export function AddInvestmentDialog({ open, onOpenChange }: AddInvestmentDialogP
             {
                 investment_type: investmentType,
                 name: name.trim(),
-                symbol: symbol.trim() || undefined,
+                symbol: symbol.trim() || null,
                 currency,
                 quantity: parseFloat(quantity),
                 purchase_date: purchaseDate,
                 purchase_price: parseFloat(purchasePrice),
                 current_price: parseFloat(currentPrice),
-                platform: platform.trim() || undefined,
-                dividend_yield: dividendYield ? parseFloat(dividendYield) : undefined,
-                notes: notes.trim() || undefined,
+                platform: platform.trim() || null,
+                dividend_yield: dividendYield ? parseFloat(dividendYield) : null,
+                notes: notes.trim() || null,
             },
             {
                 onSuccess: () => {

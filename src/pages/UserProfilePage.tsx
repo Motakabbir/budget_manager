@@ -86,7 +86,7 @@ export default function UserProfilePage() {
 
     useEffect(() => {
         // Get current user
-        supabase.auth.getUser().then(({ data: { user } }) => {
+        supabase.auth.getUser().then(({ data: { user } }: { data: { user: any } }) => {
             if (user) {
                 setUser(user);
             }

@@ -192,12 +192,12 @@ export const getProfileStats = async (userId: string): Promise<ProfileStats | nu
     if (transError) throw transError;
 
     const totalIncome = transactions
-      ?.filter((t) => t.type === 'income')
-      .reduce((sum, t) => sum + Number(t.amount), 0) || 0;
+      ?.filter((t: any) => t.type === 'income')
+      .reduce((sum: number, t: any) => sum + Number(t.amount), 0) || 0;
 
     const totalExpenses = transactions
-      ?.filter((t) => t.type === 'expense')
-      .reduce((sum, t) => sum + Number(t.amount), 0) || 0;
+      ?.filter((t: any) => t.type === 'expense')
+      .reduce((sum: number, t: any) => sum + Number(t.amount), 0) || 0;
 
     // Get goals count
     const { count: goalsCount, error: goalsError } = await supabase

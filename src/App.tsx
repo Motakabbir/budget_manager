@@ -43,7 +43,7 @@ function App() {
 
     useEffect(() => {
         // Check initial session
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        supabase.auth.getSession().then(({ data: { session } }: { data: { session: any } }) => {
             setIsAuthenticated(!!session);
 
             if (!session && window.location.pathname !== '/auth') {
@@ -61,7 +61,7 @@ function App() {
         // Listen for auth changes
         const {
             data: { subscription },
-        } = supabase.auth.onAuthStateChange((_event, session) => {
+        } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
             setIsAuthenticated(!!session);
 
             if (!session) {
