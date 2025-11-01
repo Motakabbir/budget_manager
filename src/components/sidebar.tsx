@@ -17,6 +17,7 @@ import {
     Wallet,
     Briefcase,
     BarChart3,
+    Shield,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useEffect } from 'react';
@@ -38,6 +39,12 @@ const navigation = [
     { name: 'Income', href: '/income', icon: TrendingUp },
     { name: 'Expenses', href: '/expenses', icon: TrendingDown },
     { name: 'Notifications', href: '/notifications', icon: Bell },
+    {
+        name: 'Notification Preferences',
+        href: '/notification-preferences',
+        icon: Bell,
+    },
+    { name: 'Security', href: '/security', icon: Shield },
     { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
