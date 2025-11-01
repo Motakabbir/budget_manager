@@ -21,33 +21,79 @@ import {
     Calculator,
     TrendingUpDown,
     Target,
+    ChevronDown,
+    ChevronRight,
+    User,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { BudgetAlertBadge } from '@/components/budgets';
 
-const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Bank Accounts', href: '/bank-accounts', icon: Building2 },
-    { name: 'Cards', href: '/cards', icon: CreditCard },
-    { name: 'Loans', href: '/loans', icon: HandCoins },
-    { name: 'Recurring', href: '/recurring', icon: RefreshCw },
-    { name: 'Budgets', href: '/budgets', icon: PieChart },
-    { name: 'Advanced Budgeting', href: '/budgets-advanced', icon: Calculator },
-    { name: 'Forecasting', href: '/forecasting', icon: TrendingUpDown },
-    { name: 'Financial Goals', href: '/goals', icon: Target },
-    { name: 'Investments', href: '/investments', icon: Wallet },
-    { name: 'Assets', href: '/assets', icon: Briefcase },
-    { name: 'Analytics', href: '/analytics', icon: BarChart3 },
-    { name: 'Reports', href: '/reports', icon: BarChart3 },
-    { name: 'Categories', href: '/categories', icon: Tag },
-    { name: 'Income', href: '/income', icon: TrendingUp },
-    { name: 'Expenses', href: '/expenses', icon: TrendingDown },
-    { name: 'Notifications', href: '/notifications', icon: Bell },
-    { name: 'Notification Preferences', href: '/notification-preferences', icon: Bell },
-    { name: 'Security', href: '/security', icon: Shield },
-    { name: 'Settings', href: '/settings', icon: Settings },
+// Grouped navigation for better organization
+const navigationGroups = [
+    {
+        id: 'overview',
+        name: 'Overview',
+        items: [
+            { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, tourId: 'dashboard' },
+        ],
+    },
+    {
+        id: 'financial',
+        name: 'Financial Accounts',
+        collapsible: true,
+        items: [
+            { name: 'Bank Accounts', href: '/bank-accounts', icon: Building2, tourId: 'nav-accounts' },
+            { name: 'Payment Cards', href: '/cards', icon: CreditCard },
+            { name: 'Loans', href: '/loans', icon: HandCoins },
+            { name: 'Investments', href: '/investments', icon: Wallet },
+            { name: 'Assets', href: '/assets', icon: Briefcase },
+        ],
+    },
+    {
+        id: 'transactions',
+        name: 'Transactions',
+        collapsible: true,
+        items: [
+            { name: 'Income', href: '/income', icon: TrendingUp },
+            { name: 'Expenses', href: '/expenses', icon: TrendingDown },
+            { name: 'Recurring', href: '/recurring', icon: RefreshCw },
+            { name: 'Categories', href: '/categories', icon: Tag },
+        ],
+    },
+    {
+        id: 'planning',
+        name: 'Planning & Goals',
+        collapsible: true,
+        items: [
+            { name: 'Budgets', href: '/budgets', icon: PieChart, showBadge: true, tourId: 'nav-budgets' },
+            { name: 'Advanced Budgeting', href: '/budgets-advanced', icon: Calculator },
+            { name: 'Forecasting', href: '/forecasting', icon: TrendingUpDown },
+            { name: 'Financial Goals', href: '/goals', icon: Target, tourId: 'nav-goals' },
+        ],
+    },
+    {
+        id: 'analytics',
+        name: 'Reports & Analytics',
+        collapsible: true,
+        items: [
+            { name: 'Reports', href: '/reports', icon: BarChart3, tourId: 'nav-reports' },
+            { name: 'Analytics', href: '/analytics', icon: BarChart3 },
+        ],
+    },
+    {
+        id: 'settings',
+        name: 'Settings',
+        collapsible: true,
+        items: [
+            { name: 'Profile', href: '/profile', icon: User },
+            { name: 'Notifications', href: '/notifications', icon: Bell },
+            { name: 'Preferences', href: '/notification-preferences', icon: Bell },
+            { name: 'Security', href: '/security', icon: Shield },
+            { name: 'Settings', href: '/settings', icon: Settings },
+        ],
+    },
 ];
 
 interface SidebarProps {
@@ -58,6 +104,18 @@ interface SidebarProps {
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
     const location = useLocation();
     const pathname = location.pathname;
+    const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+
+    // Toggle group collapse
+    const toggleGroup = (groupId: string) => {
+        const newCollapsed = new Set(collapsedGroups);
+        if (newCollapsed.has(groupId)) {
+            newCollapsed.delete(groupId);
+        } else {
+            newCollapsed.add(groupId);
+        }
+        setCollapsedGroups(newCollapsed);
+    };
 
     // Close sidebar on route change (mobile)
     useEffect(() => {
@@ -118,29 +176,60 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     </div>
 
                     {/* Navigation */}
-                    <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto custom-scrollbar">
-                        {navigation.map((item, index) => {
-                            const Icon = item.icon;
-                            const isActive = pathname === item.href;
+                    <nav className="flex-1 space-y-3 px-3 py-4 overflow-y-auto custom-scrollbar">
+                        {navigationGroups.map((group) => {
+                            const isCollapsed = collapsedGroups.has(group.id);
+                            const hasActiveItem = group.items.some(item => pathname === item.href);
 
                             return (
-                                <Link
-                                    key={item.name}
-                                    to={item.href}
-                                    className={cn(
-                                        'flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-all duration-200 transform hover:scale-[1.02]',
-                                        isActive
-                                            ? 'bg-linear-to-r from-blue-600 to-purple-600 text-white shadow-md'
-                                            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground hover:shadow-sm'
+                                <div key={group.id} className="space-y-1">
+                                    {/* Group Header */}
+                                    {group.collapsible ? (
+                                        <button
+                                            onClick={() => toggleGroup(group.id)}
+                                            className="flex w-full items-center justify-between px-3 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                                        >
+                                            <span>{group.name}</span>
+                                            {isCollapsed ? (
+                                                <ChevronRight className="h-4 w-4" />
+                                            ) : (
+                                                <ChevronDown className="h-4 w-4" />
+                                            )}
+                                        </button>
+                                    ) : (
+                                        <div className="px-3 py-2 text-xs font-semibold text-muted-foreground">
+                                            {group.name}
+                                        </div>
                                     )}
-                                    style={{
-                                        animationDelay: `${index * 50}ms`,
-                                    }}
-                                >
-                                    <Icon className="h-5 w-5 shrink-0" />
-                                    <span>{item.name}</span>
-                                    {item.name === 'Budgets' && <BudgetAlertBadge />}
-                                </Link>
+
+                                    {/* Group Items */}
+                                    {!isCollapsed && (
+                                        <div className="space-y-1">
+                                            {group.items.map((item) => {
+                                                const Icon = item.icon;
+                                                const isActive = pathname === item.href;
+
+                                                return (
+                                                    <Link
+                                                        key={item.name}
+                                                        to={item.href}
+                                                        data-tour={item.tourId}
+                                                        className={cn(
+                                                            'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 transform hover:scale-[1.02]',
+                                                            isActive
+                                                                ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md'
+                                                                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground hover:shadow-sm'
+                                                        )}
+                                                    >
+                                                        <Icon className="h-4 w-4 shrink-0" />
+                                                        <span className="flex-1">{item.name}</span>
+                                                        {'showBadge' in item && item.showBadge && <BudgetAlertBadge />}
+                                                    </Link>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
                             );
                         })}
                     </nav>

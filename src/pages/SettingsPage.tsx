@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,7 +17,7 @@ import {
 } from '@/lib/hooks/use-budget-queries';
 import { SettingsPageSkeleton } from '@/components/loading/LoadingSkeletons';
 import { supabase } from '@/lib/supabase/client';
-import { Plus, Pencil, Trash2, Target, DollarSign, CalendarIcon } from 'lucide-react';
+import { Plus, Pencil, Trash2, Target, DollarSign, CalendarIcon, GraduationCap, HelpCircle } from 'lucide-react';
 import {
     Dialog,
     DialogContent,
@@ -34,6 +32,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DataManagementCard } from '@/components/settings/DataManagementCard';
 import { NotificationSettings } from '@/components/settings/NotificationSettings';
+import { resetTour, startMainTour } from '@/lib/services/user-tour.service';
 
 type Category = {
     id: string;
@@ -660,6 +659,64 @@ export default function SettingsPage() {
 
             {/* Notification Preferences */}
             <NotificationSettings />
+
+            {/* Help & Support Section */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <HelpCircle className="h-5 w-5 text-blue-600" />
+                        Help & Support
+                    </CardTitle>
+                    <CardDescription>
+                        Get help and learn how to use Budget Manager
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="flex items-start gap-4 p-4 border rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20">
+                        <GraduationCap className="h-6 w-6 text-blue-600 shrink-0 mt-1" />
+                        <div className="flex-1">
+                            <h3 className="font-semibold text-sm mb-1">
+                                First-Time User Tour
+                            </h3>
+                            <p className="text-sm text-muted-foreground mb-3">
+                                New to Budget Manager? Take a guided tour to learn about key features and how to get started.
+                            </p>
+                            <Button
+                                onClick={async () => {
+                                    await resetTour();
+                                    setTimeout(() => {
+                                        startMainTour();
+                                    }, 500);
+                                }}
+                                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                                size="sm"
+                            >
+                                <GraduationCap className="h-4 w-4 mr-2" />
+                                Start Tour
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div className="grid gap-3 text-sm">
+                        <div className="flex items-center gap-2">
+                            <div className="h-2 w-2 rounded-full bg-blue-600"></div>
+                            <span>Learn about Dashboard overview</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="h-2 w-2 rounded-full bg-purple-600"></div>
+                            <span>Discover Quick Add transactions</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="h-2 w-2 rounded-full bg-green-600"></div>
+                            <span>Explore Budgets and Financial Goals</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="h-2 w-2 rounded-full bg-orange-600"></div>
+                            <span>Understand Reports & Analytics</span>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
         </div>
     );
 }

@@ -5,6 +5,7 @@ import { DashboardSkeleton } from '@/components/loading/LoadingSkeletons';
 import { scheduledNotificationProcessor } from '@/lib/services/scheduled-notification-processor';
 import { PINLockScreen } from '@/components/security/PINLockScreen';
 import { useSecuritySettings } from '@/lib/hooks/use-security';
+import { autoStartTourIfNeeded } from '@/lib/services/user-tour.service';
 
 // Eager load auth and layout (needed immediately)
 import AuthPage from '@/pages/AuthPage';
@@ -31,11 +32,13 @@ const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
 const SecuritySettingsPage = lazy(() => import('@/pages/SecuritySettingsPage'));
 const NotificationsPage = lazy(() => import('@/pages/NotificationsPage'));
 const NotificationPreferencesPage = lazy(() => import('@/pages/NotificationPreferencesPage'));
+const UserProfilePage = lazy(() => import('@/pages/UserProfilePage'));
 
 function App() {
     const navigate = useNavigate();
     const [isLocked, setIsLocked] = useState(false);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [tourChecked, setTourChecked] = useState(false); // Track if tour was checked
     const { data: settings } = useSecuritySettings();
 
     useEffect(() => {
@@ -81,6 +84,15 @@ function App() {
             window.removeEventListener('show-pin-lock', handleShowLock);
         };
     }, [navigate, settings]);
+
+    // Separate effect for tour - only runs once when authenticated
+    useEffect(() => {
+        if (isAuthenticated && !tourChecked) {
+            console.log('Checking if tour should auto-start...');
+            autoStartTourIfNeeded();
+            setTourChecked(true); // Mark as checked so it doesn't run again
+        }
+    }, [isAuthenticated, tourChecked]);
 
     // Show PIN lock screen if locked and authenticated
     if (isLocked && isAuthenticated) {
@@ -233,6 +245,14 @@ function App() {
                     element={
                         <Suspense fallback={<DashboardSkeleton />}>
                             <NotificationPreferencesPage />
+                        </Suspense>
+                    }
+                />
+                <Route
+                    path="profile"
+                    element={
+                        <Suspense fallback={<DashboardSkeleton />}>
+                            <UserProfilePage />
                         </Suspense>
                     }
                 />
