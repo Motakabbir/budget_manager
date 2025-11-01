@@ -1,6 +1,25 @@
 # Budget Manager 💰
 
-A modern, full-featured personal finance management application built with **Vite**, **React 19**, **TypeScript**, **Tailwind CSS 4**, **shadcn/ui**, **Recharts**, and **Supabase**.
+A modern, full-featured personal- **🔮 Financial Forecasting**
+  - Cash flow projections (3/6/12 months)
+  - Burn rate calculations
+  - Future balance predictions based on trends
+  - What-if scenario analysis (salary increase, loan payoff, expense reduction, etc.)
+  - Scenario comparison tools
+  - Financial health indicators
+
+- **🎯 Financial Goals & Milestones**
+  - 10 pre-configured goal types (Emergency Fund, Vacation, House Down Payment, etc.)
+  - Custom goal creation with personalized targets
+  - Milestone tracking with visual progress timeline
+  - Goal analytics (required monthly savings, time to completion, health status)
+  - Priority ranking system (1-10 scale)
+  - Auto-contribution scheduling (weekly/bi-weekly/monthly/quarterly)
+  - Smart recommendations based on progress
+  - Contribution history tracking
+  - Goal completion celebrations
+
+- **🔔 Notifications & Alerts**management application built with **Vite**, **React 19**, **TypeScript**, **Tailwind CSS 4**, **shadcn/ui**, **Recharts**, and **Supabase**.
 
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/Motakabbir/budget_manager)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -43,7 +62,23 @@ A modern, full-featured personal finance management application built with **Vit
   - Goal completion notifications
   - Multiple simultaneous savings goals
 
-- **🔔 Notifications & Alerts**
+- **� Advanced Budgeting**
+  - 50/30/20 budget rule implementation
+  - Custom budget allocation with flexible percentages
+  - Automatic category classification (needs/wants/savings)
+  - Budget vs actual spending comparison
+  - Smart recommendations based on spending patterns
+  - Real-time utilization tracking
+
+- **🔮 Financial Forecasting**
+  - Cash flow projections (3/6/12 months)
+  - Burn rate calculations
+  - Future balance predictions based on trends
+  - What-if scenario analysis (salary increase, loan payoff, expense reduction, etc.)
+  - Scenario comparison tools
+  - Financial health indicators
+
+- **�🔔 Notifications & Alerts**
   - Budget overspending alerts
   - Savings goal milestone notifications
   - Real-time toast notifications for all actions

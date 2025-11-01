@@ -18,6 +18,9 @@ import {
     Briefcase,
     BarChart3,
     Shield,
+    Calculator,
+    TrendingUpDown,
+    Target,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useEffect } from 'react';
@@ -31,6 +34,9 @@ const navigation = [
     { name: 'Loans', href: '/loans', icon: HandCoins },
     { name: 'Recurring', href: '/recurring', icon: RefreshCw },
     { name: 'Budgets', href: '/budgets', icon: PieChart },
+    { name: 'Advanced Budgeting', href: '/budgets-advanced', icon: Calculator },
+    { name: 'Forecasting', href: '/forecasting', icon: TrendingUpDown },
+    { name: 'Financial Goals', href: '/goals', icon: Target },
     { name: 'Investments', href: '/investments', icon: Wallet },
     { name: 'Assets', href: '/assets', icon: Briefcase },
     { name: 'Analytics', href: '/analytics', icon: BarChart3 },
@@ -39,11 +45,7 @@ const navigation = [
     { name: 'Income', href: '/income', icon: TrendingUp },
     { name: 'Expenses', href: '/expenses', icon: TrendingDown },
     { name: 'Notifications', href: '/notifications', icon: Bell },
-    {
-        name: 'Notification Preferences',
-        href: '/notification-preferences',
-        icon: Bell,
-    },
+    { name: 'Notification Preferences', href: '/notification-preferences', icon: Bell },
     { name: 'Security', href: '/security', icon: Shield },
     { name: 'Settings', href: '/settings', icon: Settings },
 ];

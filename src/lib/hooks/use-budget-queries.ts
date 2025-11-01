@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { transactionSchema, categorySchema, savingsGoalSchema, categoryBudgetSchema, userSettingsSchema } from '@/lib/validations/schemas';
 import type { TransactionInput, CategoryInput, SavingsGoalInput, CategoryBudgetInput, UserSettingsInput } from '@/lib/validations/schemas';
 import { UnusualSpendingDetector } from '@/lib/services/unusual-spending-detector';
+import { notificationService } from '@/lib/services/notification.service';
 
 // ============= TYPES =============
 
@@ -392,12 +393,26 @@ export function useAddTransaction() {
 
             return data;
         },
-        onSuccess: (_, variables) => {
+        onSuccess: async (data, variables) => {
             queryClient.invalidateQueries({ queryKey: ['transactions'] });
             const type = variables.type === 'income' ? 'Income' : 'Expense';
             toast.success(`${type} added successfully`, {
                 description: `$${variables.amount.toFixed(2)}`,
             });
+
+            // Smart Notification Triggers (Async - don't block UI)
+            if (variables.type === 'expense') {
+                try {
+                    // 1. Check all budget alerts
+                    await notificationService.checkAllBudgetAlerts();
+
+                    // 2. Invalidate notifications to refresh badge count
+                    queryClient.invalidateQueries({ queryKey: ['notifications'] });
+                } catch (error) {
+                    // Silently fail - notifications shouldn't block transaction flow
+                    console.error('Failed to create notifications:', error);
+                }
+            }
         },
         onError: (error: Error) => {
             toast.error('Failed to add transaction', { description: error.message });
@@ -515,9 +530,32 @@ export function useUpdateSavingsGoal() {
             if (error) throw error;
             return data;
         },
-        onSuccess: () => {
+        onSuccess: async (data) => {
             queryClient.invalidateQueries({ queryKey: queryKeys.savingsGoals });
             toast.success('Savings goal updated successfully');
+
+            // Check for goal milestone notifications
+            try {
+                const goal = data as SavingsGoal;
+                const percentage = (goal.current_amount / goal.target_amount) * 100;
+                
+                // Create milestone notification for 25%, 50%, 75%, 100%
+                const milestones = [25, 50, 75, 100];
+                const roundedPercentage = Math.round(percentage);
+                
+                if (milestones.includes(roundedPercentage)) {
+                    await notificationService.goalMilestone(
+                        goal.name,
+                        goal.current_amount,
+                        goal.target_amount,
+                        roundedPercentage
+                    );
+                }
+                
+                queryClient.invalidateQueries({ queryKey: ['notifications'] });
+            } catch (error) {
+                console.error('Failed to create goal milestone notification:', error);
+            }
         },
         onError: (error: Error) => {
             toast.error('Failed to update savings goal', { description: error.message });
@@ -1521,10 +1559,18 @@ export function useUpdateBudget() {
             if (error) throw error;
             return data as Budget;
         },
-        onSuccess: () => {
+        onSuccess: async () => {
             queryClient.invalidateQueries({ queryKey: queryKeys.budgets });
             queryClient.invalidateQueries({ queryKey: queryKeys.categoryBudgets });
             toast.success('Budget updated successfully');
+
+            // Check budget alerts after update
+            try {
+                await notificationService.checkAllBudgetAlerts();
+                queryClient.invalidateQueries({ queryKey: ['notifications'] });
+            } catch (error) {
+                console.error('Failed to check budget alerts:', error);
+            }
         },
         onError: (error: Error) => {
             toast.error('Failed to update budget', { description: error.message });
