@@ -66,19 +66,31 @@ DROP POLICY IF EXISTS "Users can delete their own avatars" ON storage.objects;
 
 CREATE POLICY "Users can view their own avatars"
     ON storage.objects FOR SELECT
-    USING (bucket_id = 'user-avatars' AND (storage.foldername(name))[1] = 'avatars');
+    USING (bucket_id = 'user-avatars');
 
 CREATE POLICY "Users can upload their own avatars"
     ON storage.objects FOR INSERT
-    WITH CHECK (bucket_id = 'user-avatars' AND (storage.foldername(name))[1] = 'avatars' AND auth.uid()::text = (storage.filename(name)).split('-')[1]);
+    WITH CHECK (
+        bucket_id = 'user-avatars' 
+        AND (storage.foldername(name))[1] = 'avatars'
+        AND auth.uid()::text = split_part(storage.filename(name), '-', 1)
+    );
 
 CREATE POLICY "Users can update their own avatars"
     ON storage.objects FOR UPDATE
-    USING (bucket_id = 'user-avatars' AND (storage.foldername(name))[1] = 'avatars' AND auth.uid()::text = (storage.filename(name)).split('-')[1]);
+    USING (
+        bucket_id = 'user-avatars' 
+        AND (storage.foldername(name))[1] = 'avatars'
+        AND auth.uid()::text = split_part(storage.filename(name), '-', 1)
+    );
 
 CREATE POLICY "Users can delete their own avatars"
     ON storage.objects FOR DELETE
-    USING (bucket_id = 'user-avatars' AND (storage.foldername(name))[1] = 'avatars' AND auth.uid()::text = (storage.filename(name)).split('-')[1]);
+    USING (
+        bucket_id = 'user-avatars' 
+        AND (storage.foldername(name))[1] = 'avatars'
+        AND auth.uid()::text = split_part(storage.filename(name), '-', 1)
+    );
 
 -- Create trigger function to auto-update updated_at
 CREATE OR REPLACE FUNCTION update_user_profiles_updated_at()

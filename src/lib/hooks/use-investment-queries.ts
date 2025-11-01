@@ -62,12 +62,11 @@ export const calculateInvestmentStats = (investment: Investment): InvestmentWith
     return {
         ...investment,
         current_value: currentValue,
-        total_invested: totalInvested,
         profit_loss: profitLoss,
         profit_loss_percentage: profitLossPercentage,
         roi_percentage: roiPercentage,
         days_held: daysHeld,
-    };
+    } as InvestmentWithStats;
 };
 
 // ============================================================================
@@ -197,11 +196,18 @@ export const usePortfolioSummary = (): {
             (sum, inv) => sum + inv.total_dividends_received, 
             0
         ),
+        total_gain_loss: 0, // calculated below
+        overall_return_percentage: 0, // calculated below
+        active_investments: activeInvestments.length,
     };
     
     summary.total_profit_loss = summary.total_current_value - summary.total_invested;
     summary.total_profit_loss_percentage = summary.total_invested > 0
         ? (summary.total_profit_loss / summary.total_invested) * 100
+        : 0;
+    summary.total_gain_loss = summary.total_profit_loss;
+    summary.overall_return_percentage = summary.total_invested > 0
+        ? (((summary.total_current_value + summary.total_dividends) - summary.total_invested) / summary.total_invested) * 100
         : 0;
     
     return { data: summary, isLoading: false };
@@ -237,26 +243,26 @@ export const useInvestmentBreakdown = (): {
     }, {} as Record<string, Investment[]>);
     
     // Calculate breakdown for each type
-    const breakdown: InvestmentBreakdown[] = Object.entries(grouped).map(([type, invs]) => {
-        const totalInvested = invs.reduce(
-            (sum, inv) => sum + (inv.quantity * inv.purchase_price), 
+    const breakdown: InvestmentBreakdown[] = Object.entries(grouped).map(([type, investments]) => {
+        const totalInvested = investments.reduce(
+            (sum: number, inv: Investment) => sum + (inv.quantity * inv.purchase_price), 
             0
         );
-        const totalCurrentValue = invs.reduce(
-            (sum, inv) => sum + (inv.quantity * inv.current_price), 
+        const totalCurrentValue = investments.reduce(
+            (sum: number, inv: Investment) => sum + (inv.quantity * inv.current_price), 
             0
         );
-        const profitLoss = totalCurrentValue - totalInvested;
+        const totalGainLoss = totalCurrentValue - totalInvested;
         const percentageOfPortfolio = totalPortfolioValue > 0
             ? (totalCurrentValue / totalPortfolioValue) * 100
             : 0;
         
         return {
             investment_type: type as any,
-            count: invs.length,
+            count: investments.length,
             total_invested: totalInvested,
             total_current_value: totalCurrentValue,
-            profit_loss: profitLoss,
+            total_gain_loss: totalGainLoss,
             percentage_of_portfolio: percentageOfPortfolio,
         };
     });
@@ -279,7 +285,7 @@ export const useTopPerformers = (limit: number = 5) => {
     
     const activeInvestments = investments.filter(inv => inv.is_active);
     const sorted = [...activeInvestments].sort(
-        (a, b) => b.profit_loss_percentage - a.profit_loss_percentage
+        (a, b) => (b.profit_loss_percentage ?? 0) - (a.profit_loss_percentage ?? 0)
     );
     
     return { data: sorted.slice(0, limit), isLoading: false };
@@ -297,7 +303,7 @@ export const useWorstPerformers = (limit: number = 5) => {
     
     const activeInvestments = investments.filter(inv => inv.is_active);
     const sorted = [...activeInvestments].sort(
-        (a, b) => a.profit_loss_percentage - b.profit_loss_percentage
+        (a, b) => (a.profit_loss_percentage ?? 0) - (b.profit_loss_percentage ?? 0)
     );
     
     return { data: sorted.slice(0, limit), isLoading: false };

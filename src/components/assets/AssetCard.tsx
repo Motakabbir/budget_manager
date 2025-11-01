@@ -12,11 +12,11 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { 
-    MoreVertical, 
-    TrendingDown, 
-    Shield, 
-    ShieldAlert, 
+import {
+    MoreVertical,
+    TrendingDown,
+    Shield,
+    ShieldAlert,
     ShieldCheck,
     Calendar,
     AlertTriangle,
@@ -62,7 +62,7 @@ export function AssetCard({
     // Get insurance icon and color
     const getInsuranceIndicator = () => {
         switch (stats.insurance_status) {
-            case 'active':
+            case 'valid':
                 return { icon: ShieldCheck, color: 'text-green-500', label: 'Insured' };
             case 'expiring_soon':
                 return { icon: ShieldAlert, color: 'text-yellow-500', label: 'Expiring Soon' };
@@ -100,7 +100,7 @@ export function AssetCard({
                             )}
                         </div>
                     </div>
-                    
+
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -124,7 +124,7 @@ export function AssetCard({
                                 </DropdownMenuItem>
                             )}
                             {onDelete && (
-                                <DropdownMenuItem 
+                                <DropdownMenuItem
                                     onClick={() => onDelete(asset.id)}
                                     className="text-destructive"
                                 >
@@ -154,7 +154,7 @@ export function AssetCard({
                     {asset.condition && (
                         <div>
                             <p className="text-xs text-muted-foreground mb-1">Condition</p>
-                            <Badge 
+                            <Badge
                                 variant={asset.condition === 'excellent' ? 'default' : 'secondary'}
                                 className="text-xs"
                             >
@@ -165,7 +165,7 @@ export function AssetCard({
                     <div>
                         <p className="text-xs text-muted-foreground mb-1">Age</p>
                         <p className="text-sm font-medium">
-                            {stats.age_years > 0 
+                            {(stats.age_years ?? 0) > 0
                                 ? `${stats.age_years}y ${stats.age_months}m`
                                 : `${stats.age_months}m`
                             }
@@ -184,19 +184,19 @@ export function AssetCard({
                         </div>
                         <div className="text-right">
                             <p className="text-sm font-bold text-orange-600">
-                                {formatCurrency(stats.total_depreciation)}
+                                {formatCurrency(stats.total_depreciation ?? 0)}
                             </p>
                             <p className="text-xs text-orange-600">
-                                {stats.depreciation_percentage.toFixed(1)}%
+                                {(stats.depreciation_percentage ?? 0).toFixed(1)}%
                             </p>
                         </div>
                     </div>
 
-                    {stats.avg_annual_depreciation > 0 && (
+                    {(stats.avg_annual_depreciation ?? 0) > 0 && (
                         <div className="flex items-center justify-between text-xs">
                             <span className="text-muted-foreground">Avg. Annual Depreciation</span>
                             <span className="font-medium">
-                                {formatCurrency(stats.avg_annual_depreciation)}
+                                {formatCurrency(stats.avg_annual_depreciation ?? 0)}
                             </span>
                         </div>
                     )}
@@ -211,8 +211,8 @@ export function AssetCard({
                                 Insurance
                             </span>
                         </div>
-                        <Badge 
-                            variant={stats.insurance_status === 'active' ? 'default' : 'secondary'}
+                        <Badge
+                            variant={stats.insurance_status === 'valid' ? 'default' : 'secondary'}
                             className="text-xs"
                         >
                             {insuranceIndicator.label}
@@ -222,11 +222,10 @@ export function AssetCard({
                     {asset.insurance_expiry_date && asset.is_insured && (
                         <div className="flex items-center justify-between text-xs">
                             <span className="text-muted-foreground">Expires</span>
-                            <span className={`font-medium ${
-                                stats.insurance_status === 'expiring_soon' ? 'text-yellow-600' :
-                                stats.insurance_status === 'expired' ? 'text-red-600' :
-                                'text-green-600'
-                            }`}>
+                            <span className={`font-medium ${stats.insurance_status === 'expiring_soon' ? 'text-yellow-600' :
+                                    stats.insurance_status === 'expired' ? 'text-red-600' :
+                                        'text-green-600'
+                                }`}>
                                 {new Date(asset.insurance_expiry_date).toLocaleDateString('en-US', {
                                     year: 'numeric',
                                     month: 'short',
@@ -239,14 +238,14 @@ export function AssetCard({
                     {asset.warranty_expiry_date && (
                         <div className="flex items-center justify-between text-xs">
                             <span className="text-muted-foreground">Warranty</span>
-                            <Badge 
-                                variant={stats.warranty_status === 'active' ? 'default' : 'secondary'}
+                            <Badge
+                                variant={stats.warranty_status === 'valid' ? 'default' : 'secondary'}
                                 className="text-xs"
                             >
-                                {stats.warranty_status === 'active' ? 'Active' :
-                                 stats.warranty_status === 'expiring_soon' ? 'Expiring Soon' :
-                                 stats.warranty_status === 'expired' ? 'Expired' :
-                                 'None'}
+                                {stats.warranty_status === 'valid' ? 'Active' :
+                                    stats.warranty_status === 'expiring_soon' ? 'Expiring Soon' :
+                                        stats.warranty_status === 'expired' ? 'Expired' :
+                                            'None'}
                             </Badge>
                         </div>
                     )}
@@ -313,11 +312,10 @@ export function AssetCard({
                         </div>
                         <div className="flex items-center justify-between text-xs">
                             <span className="text-muted-foreground">Sale Profit/Loss</span>
-                            <span className={`font-bold ${
-                                stats.sale_profit_loss >= 0 ? 'text-green-600' : 'text-red-600'
-                            }`}>
-                                {stats.sale_profit_loss >= 0 ? '+' : ''}
-                                {formatCurrency(stats.sale_profit_loss)}
+                            <span className={`font-bold ${(stats.sale_profit_loss ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                                }`}>
+                                {(stats.sale_profit_loss ?? 0) >= 0 ? '+' : ''}
+                                {formatCurrency(stats.sale_profit_loss ?? 0)}
                             </span>
                         </div>
                     </div>

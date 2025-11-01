@@ -125,7 +125,7 @@ export default function SettingsPage() {
                     .from('profiles')
                     .select('*')
                     .eq('id', authUser.id)
-                    .single();
+                    .single() as { data: { id: string; full_name: string | null; email: string } | null };
 
                 if (profile) {
                     setUser(profile);
